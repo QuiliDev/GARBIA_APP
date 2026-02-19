@@ -15,7 +15,7 @@ android {
     defaultConfig {
         applicationId = "com.garbia.app"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -42,43 +42,54 @@ android {
         compose = true
     }
     buildToolsVersion = "35.0.0"
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
 dependencies {
+    // --- 1. LAS NUEVAS HERRAMIENTAS (Versiones manuales necesarias) ---
     val ktor_version = "2.3.7"
     val camerax_version = "1.3.1"
     val coil_version = "2.6.0"
 
-    // 1. Navegación en Compose
-    implementation("androidx.navigation:navigation-compose:2.8.0")
-
-    // 2. Networking (Ktor Client)
+    // Ktor (Red)
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-android:$ktor_version")
     implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
 
-    // 3. Carga de Imágenes (Coil)
+    // Coil (Imágenes)
     implementation("io.coil-kt:coil-compose:$coil_version")
 
-    // 4. Cámara (CameraX)
+    // CameraX (Cámara)
     implementation("androidx.camera:camera-core:$camerax_version")
     implementation("androidx.camera:camera-camera2:$camerax_version")
     implementation("androidx.camera:camera-lifecycle:$camerax_version")
     implementation("androidx.camera:camera-view:$camerax_version")
 
-    // 5. Inyección de Dependencias (Hilt)
+    // Hilt (Inyección de dependencias)
     implementation("com.google.dagger:hilt-android:2.50")
     kapt("com.google.dagger:hilt-android-compiler:2.50")
 
-    implementation(libs.androidx.core.ktx)
+    // Navegación
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.activity:activity-compose:1.9.1")
+
+    // --- 3. LIBRERÍAS ESTÁNDAR (Usando 'libs' como pediste) ---
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+
+    // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -86,4 +97,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+kapt {
+    correctErrorTypes = true
 }
