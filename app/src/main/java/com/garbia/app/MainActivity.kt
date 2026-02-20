@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -24,8 +25,10 @@ import com.garbia.app.ui.components.BottomNavigationBar
 import com.garbia.app.ui.screens.CameraScreen
 import com.garbia.app.ui.screens.HomeScreen
 import com.garbia.app.ui.screens.ProfileScreen
-import com.garbia.app.ui.theme.AppThemeColor // NUEVO: Importamos nuestras opciones de color
-import com.garbia.app.ui.theme.GarbiaAppTheme // NUEVO: Importamos nuestro tema personalizado
+import com.garbia.app.ui.screens.ProcessingScreen
+import com.garbia.app.ui.screens.ResultScreen
+import com.garbia.app.ui.theme.AppThemeColor
+import com.garbia.app.ui.theme.GarbiaAppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -33,22 +36,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // NUEVO: 1. Creamos la variable que recuerda el color elegido.
-            // Por defecto empezará en PURPLE (Lila), pero podemos cambiarlo a GREEN o BLUE.
+            // Variable para el tema de color (Verde, Lila, Celeste)
             var currentTheme by remember { mutableStateOf(AppThemeColor.GREEN) }
 
-            // NUEVO: 2. Envolvemos la app en NUESTRO tema, no en el genérico, y le pasamos el color.
             GarbiaAppTheme(themeColor = currentTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    // MaterialTheme.colorScheme.background ahora será el fondo blanco que definimos
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
 
+                    // Detectamos en qué pantalla estamos para ocultar la barra si hace falta
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
-                    val showBottomNav = currentRoute != Screen.Camera.route
+
+                    // Ocultamos la barra en: Cámara, Previsualización, Procesando y Resultado
+                    val showBottomNav = currentRoute == Screen.Home.route || currentRoute == Screen.Profile.route
 
                     Scaffold(
                         bottomBar = {
@@ -57,22 +60,38 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     ) { paddingValues ->
-                        val bottomPadding = if (showBottomNav) paddingValues else androidx.compose.foundation.layout.PaddingValues(0.dp)
+                        val bottomPadding = if (showBottomNav) paddingValues else PaddingValues(0.dp)
 
                         Box(modifier = Modifier.padding(bottomPadding)) {
                             NavHost(
                                 navController = navController,
                                 startDestination = Screen.Home.route
                             ) {
+                                // 1. PANTALLAS PRINCIPALES
                                 composable(Screen.Home.route) { HomeScreen(navController) }
-                                composable(Screen.Camera.route) { CameraScreen(navController) }
                                 composable(Screen.Profile.route) { ProfileScreen() }
+                                composable(Screen.Camera.route) { CameraScreen(navController) }
 
+                                // 2. PANTALLA DE PREVISUALIZACIÓN (Foto congelada)
                                 composable("preview_screen/{photoUri}") { backStackEntry ->
                                     val encodedUri = backStackEntry.arguments?.getString("photoUri") ?: ""
                                     val decodedUri = java.net.URLDecoder.decode(encodedUri, "UTF-8")
                                     com.garbia.app.ui.screens.PhotoPreviewScreen(navController, decodedUri)
                                 }
+
+                                // 3. PANTALLA DE PROCESANDO (Carga con IA)
+                                composable("processing_screen/{photoUri}") { backStackEntry ->
+                                    val encodedUri = backStackEntry.arguments?.getString("photoUri") ?: ""
+                                    // Pasamos la URI codificada directamente
+                                    ProcessingScreen(navController, encodedUri)
+                                }
+
+                                // 4. PANTALLA DE RESULTADO FINAL
+                                composable("result_screen/{photoUri}") { backStackEntry ->
+                                    val encodedUri = backStackEntry.arguments?.getString("photoUri") ?: ""
+                                    ResultScreen(navController, encodedUri)
+                                }
+
                             }
                         }
                     }
