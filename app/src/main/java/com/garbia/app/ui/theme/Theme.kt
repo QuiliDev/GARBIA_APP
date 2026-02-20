@@ -1,58 +1,71 @@
 package com.garbia.app.ui.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+// 1. CREAMOS UNA LISTA CON LAS 3 OPCIONES POSIBLES
+enum class AppThemeColor {
+    GREEN, PURPLE, BLUE
+}
+
+// 2. DEFINIMOS LOS 3 "CUBOS DE PINTURA" DIFERENTES
+private val GreenColorScheme = lightColorScheme(
+    primary = GreenGarbiA,       // El color principal (botones, iconos)
+    background = BackgroundWhite, // Fondo de la app
+    surface = Color.White,       // Tarjetas y barras
+    onPrimary = Color.White      // Texto encima de botones verdes
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val PurpleColorScheme = lightColorScheme(
+    primary = PurpleGarbiA,
+    background = BackgroundWhite,
+    surface = Color.White,
+    onPrimary = Color.White
 )
 
+private val BlueColorScheme = lightColorScheme(
+    primary = BlueGarbiA,
+    background = BackgroundWhite,
+    surface = Color.White,
+    onPrimary = Color.White
+)
+
+// 3. EL COMPONENTE PRINCIPAL DEL TEMA (El Interruptor)
 @Composable
 fun GarbiaAppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Por defecto, la app arrancará en LILA, pero podemos pasarle otro
+    themeColor: AppThemeColor = AppThemeColor.PURPLE,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    // Aquí decidimos qué cubo de pintura usar según lo que elija el usuario
+    val colorScheme = when (themeColor) {
+        AppThemeColor.GREEN -> GreenColorScheme
+        AppThemeColor.PURPLE -> PurpleColorScheme
+        AppThemeColor.BLUE -> BlueColorScheme
     }
 
+    // (Esto es solo para pintar la barra de arriba del móvil donde sale la hora y la batería)
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+        }
+    }
+
+    // APLICAMOS EL COLOR AL TEMA DE LA APP
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = Typography, // (Si tienes tipografías personalizadas)
         content = content
     )
 }
