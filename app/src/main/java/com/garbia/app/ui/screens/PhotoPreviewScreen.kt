@@ -59,7 +59,11 @@ fun PhotoPreviewScreen(navController: NavController, photoUri: String) {
             // BOTÓN ANALIZAR (Ahora es dinámico)
             Button(
                 onClick = {
-                    // TODO: ¡Aquí conectaremos con la Inteligencia Artificial!
+                    // 1. Codificamos la URI para que viaje segura
+                    val encodedUri = java.net.URLEncoder.encode(photoUri, "UTF-8")
+
+                    // 2. Navegamos a la pantalla de Procesando
+                    navController.navigate("processing_screen/$encodedUri")
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = mainColor)
             ) {
