@@ -70,7 +70,12 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 // 1. PANTALLAS PRINCIPALES
                                 composable(Screen.Home.route) { HomeScreen(navController) }
-                                composable(Screen.Profile.route) { ProfileScreen() }
+                                composable(Screen.Profile.route) {
+                                    ProfileScreen(
+                                        currentTheme = currentTheme,
+                                        onThemeChanged = { newColor -> currentTheme = newColor }
+                                    )
+                                }
                                 composable(Screen.Camera.route) { CameraScreen(navController) }
 
                                 // 2. PANTALLA DE PREVISUALIZACIÓN (Foto congelada)

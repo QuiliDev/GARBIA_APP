@@ -14,6 +14,10 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,11 +26,26 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.garbia.app.ui.theme.AppThemeColor
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    currentTheme: AppThemeColor,
+    onThemeChanged: (AppThemeColor) -> Unit
+) {
     // Usamos un Scroll vertical por si la pantalla es pequeña
     val scrollState = rememberScrollState()
+    var showThemeDialog by remember { mutableStateOf(false) }
+    if (showThemeDialog) {
+        com.garbia.app.ui.components.ThemeSelectionDialog(
+            currentTheme = currentTheme,
+            onDismiss = { showThemeDialog = false },
+            onThemeSelected = { newTheme ->
+                onThemeChanged(newTheme)
+                showThemeDialog = false
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -46,7 +65,7 @@ fun ProfileScreen() {
         Spacer(modifier = Modifier.height(24.dp))
 
         // 3. MENÚ DE AJUSTES
-        SettingsSection()
+        SettingsSection(onOpenThemeSelector = { showThemeDialog = true })
 
         // Espacio extra al final para que no se pegue a la barra de navegación
         Spacer(modifier = Modifier.height(100.dp))
@@ -199,7 +218,7 @@ fun StatCard(icon: ImageVector, count: String, label: String, color: Color) {
 
 // --- COMPONENTE 3: AJUSTES (Menú) ---
 @Composable
-fun SettingsSection() {
+fun SettingsSection(onOpenThemeSelector: () -> Unit) {
     Padding(padding = PaddingValues(horizontal = 24.dp)) {
         Text(
             text = "Ajustes",
@@ -216,7 +235,8 @@ fun SettingsSection() {
             modifier = Modifier.fillMaxWidth()
         ) {
             Column {
-                SettingsItem(icon = Icons.Outlined.Palette, title = "Apariencia / Tema") { /* TODO: Abrir selector de tema */ }
+
+                SettingsItem(icon = Icons.Outlined.Palette, title = "Apariencia / Tema") { onOpenThemeSelector() }
                 Divider(color = Color.Gray.copy(alpha = 0.1f))
                 SettingsItem(icon = Icons.Outlined.Notifications, title = "Notificaciones") { }
                 Divider(color = Color.Gray.copy(alpha = 0.1f))
@@ -226,6 +246,7 @@ fun SettingsSection() {
             }
         }
     }
+
 }
 
 // Sub-componente para una fila del menú
