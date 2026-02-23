@@ -10,10 +10,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.compose.material3.darkColorScheme
 
 // 1. CREAMOS UNA LISTA CON LAS 3 OPCIONES POSIBLES
 enum class AppThemeColor {
-    GREEN, PURPLE, BLUE
+    GREEN, PURPLE, BLUE, ORANGE_DARK
 }
 
 // 2. DEFINIMOS LOS 3 "CUBOS DE PINTURA" DIFERENTES
@@ -38,34 +39,47 @@ private val BlueColorScheme = lightColorScheme(
     onPrimary = Color.White
 )
 
+
+// 2. DEFINIMOS EL ESQUEMA OSCURO
+private val OrangeDarkColorScheme = darkColorScheme(
+    primary = OrangeNeon,          // Botones y acciones en Naranja
+    background = DarkBackground,   // Fondo general NEGRO/GRIS
+    surface = DarkSurface,         // Fondo de la barra de navegación y tarjetas
+    onPrimary = Color.White,       // Texto sobre el naranja
+    onBackground = TextWhite,      // Texto sobre el fondo negro (automático blanco)
+    onSurface = TextWhite          // Texto sobre las tarjetas (automático blanco)
+)
+
 // 3. EL COMPONENTE PRINCIPAL DEL TEMA (El Interruptor)
 @Composable
 fun GarbiaAppTheme(
-    // Por defecto, la app arrancará en LILA, pero podemos pasarle otro
     themeColor: AppThemeColor = AppThemeColor.PURPLE,
     content: @Composable () -> Unit
 ) {
-    // Aquí decidimos qué cubo de pintura usar según lo que elija el usuario
+    // 3. ELEGIMOS EL ESQUEMA
     val colorScheme = when (themeColor) {
         AppThemeColor.GREEN -> GreenColorScheme
         AppThemeColor.PURPLE -> PurpleColorScheme
         AppThemeColor.BLUE -> BlueColorScheme
+        AppThemeColor.ORANGE_DARK -> OrangeDarkColorScheme // <--- ¡NUEVO!
     }
 
-    // (Esto es solo para pintar la barra de arriba del móvil donde sale la hora y la batería)
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+
+            // TRUCO: Si es el tema naranja, los iconos de la barra de estado (batería, hora)
+            // deben ser claros (false), si no, oscuros (true).
+            val isDark = themeColor == AppThemeColor.ORANGE_DARK
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDark
         }
     }
 
-    // APLICAMOS EL COLOR AL TEMA DE LA APP
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // (Si tienes tipografías personalizadas)
+        typography = Typography,
         content = content
     )
 }
