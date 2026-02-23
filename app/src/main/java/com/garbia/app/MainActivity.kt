@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
 
                     // Ocultamos la barra en: Cámara, Previsualización, Procesando y Resultado
                     val showBottomNav = currentRoute == Screen.Home.route || currentRoute == Screen.Profile.route
+                            || currentRoute?.startsWith("result_screen") == true
 
                     Scaffold(
                         bottomBar = {
