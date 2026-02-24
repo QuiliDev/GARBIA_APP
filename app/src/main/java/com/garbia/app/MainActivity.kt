@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -22,21 +21,18 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.garbia.app.ui.Screen
 import com.garbia.app.ui.components.BottomNavigationBar
-import com.garbia.app.ui.screens.CameraScreen
-import com.garbia.app.ui.screens.HomeScreen
-import com.garbia.app.ui.screens.ProfileScreen
-import com.garbia.app.ui.screens.ProcessingScreen
-import com.garbia.app.ui.screens.ResultScreen
+import com.garbia.app.ui.components.GarbiaTopBar
+import com.garbia.app.ui.screens.* // Importa tus pantallas
 import com.garbia.app.ui.theme.AppThemeColor
 import com.garbia.app.ui.theme.GarbiaAppTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.net.URLDecoder
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // Variable para el tema de color (Verde, Lila, Celeste)
             var currentTheme by remember { mutableStateOf(AppThemeColor.GREEN) }
 
             GarbiaAppTheme(themeColor = currentTheme) {
@@ -45,59 +41,76 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-
-                    // Detectamos en qué pantalla estamos para ocultar la barra si hace falta
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
 
-                    // Ocultamos la barra en: Cámara, Previsualización, Procesando y Resultado
-                    val showBottomNav = currentRoute == Screen.Home.route || currentRoute == Screen.Profile.route
-                            || currentRoute?.startsWith("result_screen") == true
+                    // ✅ CAMBIO CRÍTICO 1: LOGICA DE LA BARRA SUPERIOR
+                    // Antes: currentRoute == Screen.Home.route || ...
+                    // Ahora: ELIMINAMOS Screen.Home.route de aquí.
+                    // La Home se encarga de su propia barra. Solo la mostramos en ResultScreen (u otras).
+                    val showTopBar = currentRoute?.startsWith("result_screen") == true
+
+                    // Lógica del tema oscuro (se mantiene igual)
+                    val isDarkTheme = currentTheme == AppThemeColor.ORANGE_DARK
+
+                    // Lógica de la barra inferior (se mantiene igual)
+                    val showBottomNav = currentRoute == Screen.Home.route ||
+                            currentRoute == Screen.Profile.route ||
+                            currentRoute?.startsWith("result_screen") == true
 
                     Scaffold(
+                        topBar = {
+                            if (showTopBar) {
+                                GarbiaTopBar(
+                                    navController = navController,
+                                    isOverDarkBackground = isDarkTheme
+                                )
+                            }
+                        },
                         bottomBar = {
                             if (showBottomNav) {
+                                // Asegúrate de usar el nombre correcto de tu componente BottomBar
                                 BottomNavigationBar(navController = navController)
                             }
                         }
-                    ) { paddingValues ->
-                        val bottomPadding = if (showBottomNav) paddingValues else PaddingValues(0.dp)
+                    ) { innerPadding ->
 
-                        Box(modifier = Modifier.padding(bottomPadding)) {
-                            NavHost(
-                                navController = navController,
-                                startDestination = Screen.Home.route
-                            ) {
-                                // 1. PANTALLAS PRINCIPALES
-                                composable(Screen.Home.route) { HomeScreen(navController) }
-                                composable(Screen.Profile.route) {
-                                    ProfileScreen(
-                                        currentTheme = currentTheme,
-                                        onThemeChanged = { newColor -> currentTheme = newColor }
-                                    )
-                                }
-                                composable(Screen.Camera.route) { CameraScreen(navController) }
+                        val topPadding = if (currentRoute == Screen.Home.route) 0.dp else innerPadding.calculateTopPadding()
+                        val bottomPadding = if (currentRoute == Screen.Home.route) 0.dp else innerPadding.calculateBottomPadding()
 
-                                // 2. PANTALLA DE PREVISUALIZACIÓN (Foto congelada)
-                                composable("preview_screen/{photoUri}") { backStackEntry ->
-                                    val encodedUri = backStackEntry.arguments?.getString("photoUri") ?: ""
-                                    val decodedUri = java.net.URLDecoder.decode(encodedUri, "UTF-8")
-                                    com.garbia.app.ui.screens.PhotoPreviewScreen(navController, decodedUri)
-                                }
+                        NavHost(
+                            navController = navController,
+                            startDestination = Screen.Home.route,
+                            modifier = Modifier.padding(top = topPadding, bottom = bottomPadding)
+                        ) {
+                            // 1. HOME SCREEN
+                            composable(Screen.Home.route) {
+                                HomeScreen(navController)
+                            }
 
-                                // 3. PANTALLA DE PROCESANDO (Carga con IA)
-                                composable("processing_screen/{photoUri}") { backStackEntry ->
-                                    val encodedUri = backStackEntry.arguments?.getString("photoUri") ?: ""
-                                    // Pasamos la URI codificada directamente
-                                    ProcessingScreen(navController, encodedUri)
-                                }
+                            // 2. OTRAS PANTALLAS
+                            composable(Screen.Profile.route) {
+                                ProfileScreen(
+                                    currentTheme = currentTheme,
+                                    onThemeChanged = { newColor -> currentTheme = newColor }
+                                )
+                            }
+                            composable(Screen.Camera.route) { CameraScreen(navController) }
 
-                                // 4. PANTALLA DE RESULTADO FINAL
-                                composable("result_screen/{photoUri}") { backStackEntry ->
-                                    val encodedUri = backStackEntry.arguments?.getString("photoUri") ?: ""
-                                    ResultScreen(navController, encodedUri)
-                                }
+                            composable("preview_screen/{photoUri}") { backStackEntry ->
+                                val encodedUri = backStackEntry.arguments?.getString("photoUri") ?: ""
+                                val decodedUri = URLDecoder.decode(encodedUri, "UTF-8")
+                                PhotoPreviewScreen(navController, decodedUri)
+                            }
 
+                            composable("processing_screen/{photoUri}") { backStackEntry ->
+                                val encodedUri = backStackEntry.arguments?.getString("photoUri") ?: ""
+                                ProcessingScreen(navController, encodedUri)
+                            }
+
+                            composable("result_screen/{photoUri}") { backStackEntry ->
+                                val encodedUri = backStackEntry.arguments?.getString("photoUri") ?: ""
+                                ResultScreen(navController, encodedUri)
                             }
                         }
                     }
