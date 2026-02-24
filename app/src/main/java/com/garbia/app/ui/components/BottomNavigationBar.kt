@@ -77,7 +77,7 @@ fun BottomNavigationBar(navController: NavController) {
                 .fillMaxWidth()
                 .height(barHeight)
                 .shadow(
-                    elevation = 20.dp,        // la sombra
+                    elevation = 30.dp,        // la sombra
                     shape = navShape,
                     ambientColor = Color.Black, // sombra ambiental oscura
                     spotColor = Color.Black,    // Sombra principal fuerte

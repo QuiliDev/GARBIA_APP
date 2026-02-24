@@ -75,18 +75,12 @@ class MainActivity : ComponentActivity() {
                         }
                     ) { innerPadding ->
 
-                        // ✅ CAMBIO CRÍTICO 2: GESTIÓN DEL PADDING
-                        // El Scaffold nos da 'innerPadding' para no tapar el contenido con las barras.
-                        // PERO en la Home queremos que el fondo verde suba hasta arriba del todo (detrás de la hora).
-                        // Así que si estamos en Home, ignoramos el padding superior (top = 0).
-
                         val topPadding = if (currentRoute == Screen.Home.route) 0.dp else innerPadding.calculateTopPadding()
-                        val bottomPadding = innerPadding.calculateBottomPadding()
+                        val bottomPadding = if (currentRoute == Screen.Home.route) 0.dp else innerPadding.calculateBottomPadding()
 
                         NavHost(
                             navController = navController,
                             startDestination = Screen.Home.route,
-                            // Aplicamos el padding calculado manualmente
                             modifier = Modifier.padding(top = topPadding, bottom = bottomPadding)
                         ) {
                             // 1. HOME SCREEN
