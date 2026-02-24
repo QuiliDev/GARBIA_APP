@@ -85,7 +85,7 @@ fun HomeScreen(navController: NavController) {
             // Actividad
             RecentActivitySection(modifier = Modifier.offset(y = (-40).dp))
 
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(100.dp))
         }
 
         // 2. LA TOPBAR FLOTANTE (Animada)
@@ -109,11 +109,11 @@ fun HomeHeader(mainColor: Color) {
     val infiniteTransition = rememberInfiniteTransition(label = "background_anim")
     val offset1 by infiniteTransition.animateFloat(
         initialValue = 0f, targetValue = 30f,
-        animationSpec = infiniteRepeatable(tween(3500, easing = LinearEasing), RepeatMode.Reverse), label = "c1"
+        animationSpec = infiniteRepeatable(tween(2500, easing = LinearEasing), RepeatMode.Reverse), label = "c1"
     )
     val offset2 by infiniteTransition.animateFloat(
         initialValue = 0f, targetValue = -25f,
-        animationSpec = infiniteRepeatable(tween(3000, easing = LinearEasing), RepeatMode.Reverse), label = "c2"
+        animationSpec = infiniteRepeatable(tween(1500, easing = LinearEasing), RepeatMode.Reverse), label = "c2"
     )
 
     Box(
@@ -470,12 +470,15 @@ fun FrontCardContent(tip: TipData) {
 
 @Composable
 fun BackCardContent(tip: TipData) {
+    // Capturamos los colores del tema actual
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     Box(
         modifier = Modifier
             .fillMaxSize()
             // ✅ CORRECCIÓN: Primero pintamos de BLANCO sólido.
             // Esto evita que se vea oscura o transparente al girar.
-            .background(Color.White)
+            .background(surfaceColor)
 
             // LUEGO aplicamos el degradado de color encima
             .background(
@@ -494,7 +497,7 @@ fun BackCardContent(tip: TipData) {
         Icon(
             imageVector = tip.icon,
             contentDescription = null,
-            tint = tip.color.copy(alpha = 0.08f), // Un pelín más visible
+            tint = onSurfaceColor.copy(alpha = 0.08f), // Un pelín más visible
             modifier = Modifier
                 .size(120.dp)
                 .align(Alignment.BottomEnd)
@@ -513,7 +516,7 @@ fun BackCardContent(tip: TipData) {
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .background(tip.color.copy(alpha = 0.1f), CircleShape),
+                    .background(onSurfaceColor.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -529,7 +532,7 @@ fun BackCardContent(tip: TipData) {
             // Texto
             Text(
                 text = tip.description,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                color = onSurfaceColor.copy(alpha = 0.8f),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,

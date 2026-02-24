@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-
+import com.garbia.app.ui.Screen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GarbiaTopBar(
@@ -58,27 +58,31 @@ fun GarbiaTopBar(
                     .padding(start = 24.dp)
                     .clickable {
                         // Clic en el logo te lleva al inicio
-                        navController.navigate("home_screen") {
-                            popUpTo("home_screen") { inclusive = true }
+                        if (navController.currentDestination?.route != Screen.Home.route) {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     }
             ) {
+                // Texto GarbIA
+                Text(
+                    text = "GarbIA",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 28.sp,
+                    color = contentColor,
+                    // Kerning negativo para que las letras estén juntitas y modernas
+                    letterSpacing = (-1).sp
+                )
+                Spacer(modifier = Modifier.width(6.dp))
                 // Icono Hoja (Eco)
                 Icon(
                     imageVector = Icons.Outlined.Eco,
                     contentDescription = null,
                     tint = contentColor,
                     modifier = Modifier.size(26.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                // Texto GarbIA
-                Text(
-                    text = "GarbIA",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 26.sp,
-                    color = contentColor,
-                    // Kerning negativo para que las letras estén juntitas y modernas
-                    letterSpacing = (-1).sp
                 )
             }
         },
@@ -129,8 +133,22 @@ fun GarbiaTopBar(
                     // 2. PERFIL
                     IconButton(
                         onClick = {
-                            navController.navigate("profile_screen") { launchSingleTop = true }
-                        },
+                            // Esto mantiene el historial de navegación sincronizado y evita que se rompa.
+
+                            val targetRoute = Screen.Profile.route // O "profile_screen" si no tienes Screen importado
+
+                            if (navController.currentDestination?.route != targetRoute) {
+                                navController.navigate(targetRoute) {
+                                    // 1. Limpiamos la pila hasta el inicio (Home) y guardamos estado
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    // 2. Evitamos duplicados
+                                    launchSingleTop = true
+                                    // 3. Restauramos estado si ya habíamos estado aquí
+                                    restoreState = true
+                                }
+                            }                        },
                         modifier = Modifier.size(38.dp)
                     ) {
                         Box(
