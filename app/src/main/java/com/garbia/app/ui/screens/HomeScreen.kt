@@ -10,16 +10,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.garbia.app.ui.components.*
 import com.garbia.app.ui.components.GarbiaTopBar
+import com.garbia.app.ui.viewmodel.HomeViewModel
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val background = MaterialTheme.colorScheme.background
 
-    // Lógica para mostrar/ocultar la TopBar al hacer scroll
     val showTopBar by remember {
         derivedStateOf { scrollState.value < 100 }
     }
@@ -29,36 +32,40 @@ fun HomeScreen(navController: NavController) {
             .fillMaxSize()
             .background(background)
     ) {
-        // 1. EL CONTENIDO (Con Scroll)
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            // Cabecera grande (Ahora parametrizable si quieres)
-            HomeHeader(username = "Anthony", level = "Nivel 5: Experto")
+            HomeHeader(
+                username = uiState.nombre,
+                level = uiState.nivelLabel,
+                currentXp = uiState.puntosEnNivel,
+                targetXp = uiState.puntosParaSiguienteNivel,
+                navController = navController
+            )
 
-            // Dashboard (-40dp para solapar sobre el header)
             DashboardStats(
+                escaneos = uiState.escaneosTotales,
+                puntos = uiState.puntosTotales,
+                co2 = uiState.co2Ahorrado,
                 modifier = Modifier
                     .offset(y = (-40).dp)
                     .padding(horizontal = 24.dp)
             )
 
-            // Espacio de ajuste
             Spacer(modifier = Modifier.height(10.dp).offset(y = (-40).dp))
 
-            // Sección de Tips
             DidYouKnowSection(modifier = Modifier.offset(y = (-40).dp))
 
-            // Sección de Actividad
-            RecentActivitySection(modifier = Modifier.offset(y = (-40).dp))
+            RecentActivitySection(
+                historial = uiState.historialReciente,
+                modifier = Modifier.offset(y = (-40).dp)
+            )
 
-            // Espacio final para no chocar con la BottomBar
             Spacer(modifier = Modifier.height(100.dp))
         }
 
-        // 2. LA TOPBAR FLOTANTE (Animada)
         AnimatedVisibility(
             visible = showTopBar,
             enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
