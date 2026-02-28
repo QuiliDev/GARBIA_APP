@@ -24,6 +24,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.garbia.app.data.model.Escaneo
+import com.garbia.app.ui.Screen
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // --- 1. CABECERA DE INICIO ---
 @Composable
@@ -31,7 +37,8 @@ fun HomeHeader(
     username: String = "Anthony",
     level: String = "Nivel 5: Experto",
     currentXp: Int = 1200,
-    targetXp: Int = 1500
+    targetXp: Int = 1500,
+    navController: NavController? = null
 ) {
     val mainColor = MaterialTheme.colorScheme.primary
     val infiniteTransition = rememberInfiniteTransition(label = "background_anim")
@@ -94,20 +101,20 @@ fun HomeHeader(
             Text(text = "¡Estás a nada de subir de nivel!", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp, bottom = 20.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                QuickActionItem(Icons.Outlined.Leaderboard, "Ranking")
-                QuickActionItem(Icons.Outlined.CardGiftcard, "Premios")
-                QuickActionItem(Icons.Outlined.Lightbulb, "Tips")
-                QuickActionItem(Icons.Outlined.Map, "Mapa")
+                QuickActionItem(Icons.Outlined.Leaderboard,  "Ranking") { navController?.navigate(Screen.Ranking.route) }
+                QuickActionItem(Icons.Outlined.CardGiftcard, "Premios") { navController?.navigate(Screen.Premios.route) }
+                QuickActionItem(Icons.Outlined.Lightbulb,   "Tips")    { navController?.navigate(Screen.Tips.route) }
+                QuickActionItem(Icons.Outlined.Map,          "Mapa")    { navController?.navigate(Screen.Mapas.route) }
             }
         }
     }
 }
 
 @Composable
-fun QuickActionItem(icon: ImageVector, label: String) {
+fun QuickActionItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            modifier = Modifier.size(45.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.15f)).clickable { },
+            modifier = Modifier.size(45.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.15f)).clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
@@ -119,7 +126,12 @@ fun QuickActionItem(icon: ImageVector, label: String) {
 
 // --- 2. DASHBOARD (ESTADÍSTICAS) ---
 @Composable
-fun DashboardStats(modifier: Modifier = Modifier) {
+fun DashboardStats(
+    escaneos: Int = 0,
+    puntos: Int = 0,
+    co2: Float = 0f,
+    modifier: Modifier = Modifier
+) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -141,15 +153,15 @@ fun DashboardStats(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                StatItem(Icons.Outlined.QrCodeScanner, 50, "", "Escaneos")
+                StatItem(Icons.Outlined.QrCodeScanner, escaneos, "", "Escaneos")
             }
             Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.Gray.copy(alpha = 0.2f)))
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                StatItem(Icons.Outlined.MonetizationOn, 1250, "", "Puntos", true)
+                StatItem(Icons.Outlined.MonetizationOn, puntos, "", "Puntos", true)
             }
             Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.Gray.copy(alpha = 0.2f)))
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                StatItem(Icons.Outlined.Co2, 5, "kg", "Ahorrados")
+                StatItem(Icons.Outlined.Co2, co2.toInt(), "kg", "CO₂")
             }
         }
     }
@@ -244,17 +256,66 @@ fun BackCardContent(tip: TipData) {
 
 // --- 4. ACTIVIDAD RECIENTE ---
 @Composable
-fun RecentActivitySection(modifier: Modifier = Modifier) {
+fun RecentActivitySection(
+    historial: List<Escaneo> = emptyList(),
+    modifier: Modifier = Modifier
+) {
     Column(modifier = modifier.padding(top = 24.dp, start = 24.dp, end = 24.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(text = "Actividad Reciente", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             Text(text = "Ver todo", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { })
         }
-        ActivityItem(Icons.Outlined.LocalDrink, "Botella Vidrio", "Hoy, 10:30", "+15 pts", Color(0xFF00A550))
-        Spacer(modifier = Modifier.height(12.dp))
-        ActivityItem(Icons.Outlined.ShoppingBag, "Envase Yogur", "Ayer, 18:45", "+10 pts", Color(0xFFFFC107))
-        Spacer(modifier = Modifier.height(12.dp))
-        ActivityItem(Icons.Outlined.Description, "Caja Cartón", "Ayer, 09:15", "+25 pts", Color(0xFF2979FF))
+        if (historial.isEmpty()) {
+            Text(
+                text = "Aún no has escaneado nada. ¡Empieza reciclando!",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        } else {
+            historial.forEachIndexed { index, escaneo ->
+                ActivityItem(
+                    icon = iconParaMaterial(escaneo.tipoMaterial),
+                    title = escaneo.contenedor,
+                    date = formatearFecha(escaneo.fechaTimestamp),
+                    points = "+${escaneo.puntosGanados} pts",
+                    color = colorParaMaterial(escaneo.tipoMaterial)
+                )
+                if (index < historial.lastIndex) Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+    }
+}
+
+private fun iconParaMaterial(tipo: String): androidx.compose.ui.graphics.vector.ImageVector =
+    when (tipo.lowercase()) {
+        "vidrio" -> Icons.Outlined.LocalDrink
+        "plástico", "plastico" -> Icons.Outlined.ShoppingBag
+        "papel", "cartón", "carton" -> Icons.Outlined.Description
+        "orgánico", "organico" -> Icons.Outlined.Grass
+        "metal" -> Icons.Outlined.Hardware
+        else -> Icons.Outlined.Delete
+    }
+
+private fun colorParaMaterial(tipo: String): Color =
+    when (tipo.lowercase()) {
+        "vidrio" -> Color(0xFF00A550)
+        "plástico", "plastico" -> Color(0xFFFFC107)
+        "papel", "cartón", "carton" -> Color(0xFF2979FF)
+        "orgánico", "organico" -> Color(0xFF8BC34A)
+        "metal" -> Color(0xFF9E9E9E)
+        else -> Color(0xFF607D8B)
+    }
+
+private fun formatearFecha(timestamp: Long): String {
+    val ahora = System.currentTimeMillis()
+    val diff = ahora - timestamp
+    val unDia = 24 * 60 * 60 * 1000L
+    val hora = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
+    return when {
+        diff < unDia -> "Hoy, $hora"
+        diff < 2 * unDia -> "Ayer, $hora"
+        else -> SimpleDateFormat("dd/MM, HH:mm", Locale.getDefault()).format(Date(timestamp))
     }
 }
 
