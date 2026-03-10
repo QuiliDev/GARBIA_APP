@@ -70,6 +70,10 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$camerax_version")
     implementation("androidx.camera:camera-view:$camerax_version")
 
+    // Firebase (requiere google-services.json + plugin para activarse; FirestoreService tiene fallback)
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
     // Room (Base de datos local)
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
