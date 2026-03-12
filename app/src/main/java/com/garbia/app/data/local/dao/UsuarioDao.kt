@@ -13,6 +13,9 @@ interface UsuarioDao {
     @Query("SELECT * FROM usuario WHERE id = 1")
     fun getUsuario(): Flow<UsuarioEntity?>
 
+    @Query("SELECT * FROM usuario WHERE id = 1")
+    suspend fun getUsuarioOnce(): UsuarioEntity?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun crearSiNoExiste(usuario: UsuarioEntity)
 
