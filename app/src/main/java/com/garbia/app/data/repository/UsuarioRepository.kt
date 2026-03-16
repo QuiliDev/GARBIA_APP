@@ -6,6 +6,7 @@ import com.garbia.app.data.local.entity.EscaneoEntity
 import com.garbia.app.data.local.entity.UsuarioEntity
 import com.garbia.app.data.model.Escaneo
 import com.garbia.app.data.model.Usuario
+import com.garbia.app.data.remote.FirestoreService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -14,7 +15,8 @@ import javax.inject.Singleton
 @Singleton
 class UsuarioRepository @Inject constructor(
     private val usuarioDao: UsuarioDao,
-    private val escaneoDao: EscaneoDao
+    private val escaneoDao: EscaneoDao,
+    private val firestoreService: FirestoreService
 ) {
     fun getUsuario(): Flow<Usuario?> =
         usuarioDao.getUsuario().map { it?.toDomain() }
@@ -43,6 +45,19 @@ class UsuarioRepository @Inject constructor(
             )
         )
         usuarioDao.sumarPuntos(puntos, co2)
+
+        // Sync actualizado a Firestore (best-effort, no bloquea si falla)
+        val usuario = usuarioDao.getUsuarioOnce()
+        if (usuario != null) {
+            val uid = usuario.firebaseUid ?: "local_user"
+            firestoreService.sincronizarUsuario(
+                uid    = uid,
+                nombre = usuario.nombre,
+                puntos = usuario.puntosTotales,
+                escaneos = usuario.escaneosTotales,
+                co2    = usuario.co2Ahorrado
+            )
+        }
     }
 }
 
