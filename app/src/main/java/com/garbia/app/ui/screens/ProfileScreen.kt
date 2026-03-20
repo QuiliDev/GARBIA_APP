@@ -13,18 +13,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.garbia.app.ui.components.*
 import com.garbia.app.ui.theme.AppThemeColor
+import com.garbia.app.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
     currentTheme: AppThemeColor,
-    onThemeChanged: (AppThemeColor) -> Unit
+    onThemeChanged: (AppThemeColor) -> Unit,
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
+    val usuario by viewModel.usuario.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     var showThemeDialog by remember { mutableStateOf(false) }
 
-    // Lógica del Diálogo
     if (showThemeDialog) {
         ThemeSelectionDialog(
             currentTheme = currentTheme,
@@ -47,10 +51,16 @@ fun ProfileScreen(
                 .verticalScroll(scrollState)
         ) {
             // 1. CABECERA
-            ProfileHeader(username = "Anthony")
+            ProfileHeader(
+                username = usuario?.nombre ?: "Usuario",
+                level    = usuario?.nivelLabel ?: "Nivel 1: Novato"
+            )
 
             // 2. ESTADÍSTICAS
             ProfileStatsCard(
+                puntos   = usuario?.puntosTotales ?: 0,
+                escaneos = usuario?.escaneosTotales ?: 0,
+                co2      = usuario?.co2Ahorrado ?: 0f,
                 modifier = Modifier
                     .offset(y = (-50).dp)
                     .padding(horizontal = 24.dp)
@@ -62,52 +72,51 @@ fun ProfileScreen(
                 SectionTitle("General")
                 ProfileMenuCard {
                     ProfileOptionItem(
-                        icon = Icons.Outlined.Palette,
-                        title = "Apariencia",
-                        subtitle = "Cambiar tema de color",
+                        icon      = Icons.Outlined.Palette,
+                        title     = "Apariencia",
+                        subtitle  = "Cambiar tema de color",
                         iconColor = Color(0xFFE91E63),
-                        onClick = { showThemeDialog = true }
+                        onClick   = { showThemeDialog = true }
                     )
                     Divider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     ProfileOptionItem(
-                        icon = Icons.Outlined.Notifications,
-                        title = "Notificaciones",
-                        subtitle = "Gestor de alertas",
+                        icon      = Icons.Outlined.Notifications,
+                        title     = "Notificaciones",
+                        subtitle  = "Gestor de alertas",
                         iconColor = Color(0xFFFF9800),
-                        onClick = { }
+                        onClick   = { }
                     )
                 }
 
                 SectionTitle("Soporte")
                 ProfileMenuCard {
                     ProfileOptionItem(
-                        icon = Icons.Outlined.Help,
-                        title = "Ayuda",
-                        subtitle = "Preguntas frecuentes",
+                        icon      = Icons.Outlined.Help,
+                        title     = "Ayuda",
+                        subtitle  = "Preguntas frecuentes",
                         iconColor = Color(0xFF2196F3),
-                        onClick = { }
+                        onClick   = { }
                     )
                     Divider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     ProfileOptionItem(
-                        icon = Icons.Outlined.PrivacyTip,
-                        title = "Privacidad",
-                        subtitle = null,
+                        icon      = Icons.Outlined.PrivacyTip,
+                        title     = "Privacidad",
+                        subtitle  = null,
                         iconColor = Color(0xFF4CAF50),
-                        onClick = { }
+                        onClick   = { }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Botón de Logout
                 Box(modifier = Modifier.padding(horizontal = 24.dp)) {
                     Button(
                         onClick = { /* Logout logic */ },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.error
+                            contentColor   = MaterialTheme.colorScheme.error
                         ),
-                        shape = RoundedCornerShape(16.dp),
+                        shape    = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth().height(50.dp)
                     ) {
                         Icon(Icons.Outlined.Logout, contentDescription = null, modifier = Modifier.size(20.dp))

@@ -133,7 +133,12 @@ fun ProfileHeader(
 
 // --- 2. TARJETA DE ESTADÍSTICAS ---
 @Composable
-fun ProfileStatsCard(modifier: Modifier = Modifier) {
+fun ProfileStatsCard(
+    puntos: Int = 0,
+    escaneos: Int = 0,
+    co2: Float = 0f,
+    modifier: Modifier = Modifier
+) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -144,11 +149,11 @@ fun ProfileStatsCard(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(vertical = 24.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ProfileStatItem(Modifier.weight(1f), "1.250", "Puntos", Icons.Outlined.MonetizationOn, Color(0xFFFFC107))
+            ProfileStatItem(Modifier.weight(1f), "%,d".format(puntos), "Puntos", Icons.Outlined.MonetizationOn, Color(0xFFFFC107))
             Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color.Gray.copy(alpha = 0.2f)))
-            ProfileStatItem(Modifier.weight(1f), "250", "Objetos", Icons.Outlined.Recycling, Color(0xFF00A550))
+            ProfileStatItem(Modifier.weight(1f), "$escaneos", "Objetos", Icons.Outlined.Recycling, Color(0xFF00A550))
             Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color.Gray.copy(alpha = 0.2f)))
-            ProfileStatItem(Modifier.weight(1f), "12kg", "CO2 Saved", Icons.Outlined.Cloud, Color(0xFF2979FF))
+            ProfileStatItem(Modifier.weight(1f), "%.1fkg".format(co2), "CO2 Saved", Icons.Outlined.Cloud, Color(0xFF2979FF))
         }
     }
 }
