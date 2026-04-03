@@ -73,17 +73,16 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // --- LÓGICA DE VISIBILIDAD DE BARRAS ---
-
-    // TopBar: Solo visible en pantallas de resultado (Home tiene la suya propia)
+    // --- VISIBILIDAD DE BARRAS ---
     val showTopBar = currentRoute?.startsWith("result_screen") == true
-
-    // BottomBar: Visible en Home, Perfil y Resultado
     val showBottomNav = currentRoute == Screen.Home.route ||
             currentRoute == Screen.Profile.route ||
+            currentRoute == Screen.Ranking.route ||
+            currentRoute == Screen.Premios.route ||
+            currentRoute == Screen.Tips.route ||
+            currentRoute == Screen.Mapas.route ||
             currentRoute?.startsWith("result_screen") == true
 
-    // Tema Oscuro: Para ajustar colores de la TopBar si es necesario
     val isDarkTheme = currentTheme == AppThemeColor.ORANGE_DARK
 
     Scaffold(
@@ -102,11 +101,21 @@ fun MainScreen(
         }
     ) { innerPadding ->
 
-        // --- LÓGICA DE PADDING TRANSPARENTE ---
-        // Si es HOME, anulamos el padding (0.dp) para que el contenido se dibuje detrás de las barras.
-        // En el resto de pantallas, respetamos el padding del sistema.
-        val topPadding = if (currentRoute == Screen.Home.route || currentRoute == Screen.Home.route) 0.dp else innerPadding.calculateTopPadding()
-        val bottomPadding = if (currentRoute == Screen.Home.route) 0.dp else innerPadding.calculateBottomPadding()
+        // --- LÓGICA DE PADDING (CAMBIO AQUÍ) ---
+
+        // 1. TOP PADDING:
+        // Solo quitamos el padding (0.dp) si estamos en la CÁMARA.
+        // En el resto (Home, Perfil...), respetamos el padding del sistema para que no se solape con la hora.
+        val topPadding = if (currentRoute == Screen.Camera.route) 0.dp else innerPadding.calculateTopPadding()
+
+        // 2. BOTTOM PADDING:
+        // En result_screen aplicamos el padding del Scaffold para que el botón "Continuar" no quede
+        // tapado por la barra. En Home/Profile lo dejamos en 0.dp para el efecto transparente.
+        val bottomPadding = when {
+            currentRoute?.startsWith("result_screen") == true -> innerPadding.calculateBottomPadding()
+            showBottomNav -> 0.dp
+            else -> innerPadding.calculateBottomPadding()
+        }
 
         GarbiaNav(
             navController = navController,
@@ -149,6 +158,18 @@ fun GarbiaNav(
         composable(Screen.Camera.route) {
             CameraScreen(navController)
         }
+
+        // 7. RANKING
+        composable(Screen.Ranking.route) { RankingScreen(navController) }
+
+        // 8. PREMIOS
+        composable(Screen.Premios.route) { PremiosScreen(navController) }
+
+        // 9. TIPS
+        composable(Screen.Tips.route) { TipsScreen(navController) }
+
+        // 10. MAPAS
+        composable(Screen.Mapas.route) { MapasScreen(navController) }
 
         // 4. PREVISUALIZACIÓN DE FOTO
         composable("preview_screen/{photoUri}") { backStackEntry ->
