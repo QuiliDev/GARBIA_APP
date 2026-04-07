@@ -15,6 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,6 +28,7 @@ import com.garbia.app.ui.components.GarbiaTopBar
 import com.garbia.app.ui.screens.*
 import com.garbia.app.ui.theme.AppThemeColor
 import com.garbia.app.ui.theme.GarbiaAppTheme
+import com.garbia.app.ui.viewmodel.OnboardingViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.net.URLDecoder
 
@@ -34,18 +37,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // Punto de entrada limpio
             GarbiaAppMain()
         }
     }
 }
 
 // -----------------------------------------------------------------------------
-// 1. GARBIA APP: Maneja el Tema y el contenedor principal (Surface)
+// 1. GARBIA APP: Maneja el Tema, el Onboarding y el contenedor principal
 // -----------------------------------------------------------------------------
 @Composable
-fun GarbiaAppMain() {
-    // Estado del tema elevado al nivel más alto
+fun GarbiaAppMain(
+    onboardingViewModel: OnboardingViewModel = hiltViewModel()
+) {
+    val hasSeenOnboarding by onboardingViewModel.hasSeenOnboarding.collectAsStateWithLifecycle()
     var currentTheme by remember { mutableStateOf(AppThemeColor.GREEN) }
 
     GarbiaAppTheme(themeColor = currentTheme) {
@@ -53,9 +57,14 @@ fun GarbiaAppMain() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
+            // Espera a que DataStore cargue antes de navegar
+            if (hasSeenOnboarding == null) return@Surface
+
+            val startRoute = if (hasSeenOnboarding == true) Screen.Home.route else Screen.Onboarding.route
             MainScreen(
+                startRoute = startRoute,
                 currentTheme = currentTheme,
-                onThemeChanged = { newTheme -> currentTheme = newTheme }
+                onThemeChanged = { currentTheme = it }
             )
         }
     }
@@ -66,6 +75,7 @@ fun GarbiaAppMain() {
 // -----------------------------------------------------------------------------
 @Composable
 fun MainScreen(
+    startRoute: String,
     currentTheme: AppThemeColor,
     onThemeChanged: (AppThemeColor) -> Unit
 ) {
@@ -73,7 +83,6 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // --- VISIBILIDAD DE BARRAS ---
     val showTopBar = currentRoute?.startsWith("result_screen") == true
     val showBottomNav = currentRoute == Screen.Home.route ||
             currentRoute == Screen.Profile.route ||
@@ -101,16 +110,7 @@ fun MainScreen(
         }
     ) { innerPadding ->
 
-        // --- LÓGICA DE PADDING (CAMBIO AQUÍ) ---
-
-        // 1. TOP PADDING:
-        // Solo quitamos el padding (0.dp) si estamos en la CÁMARA.
-        // En el resto (Home, Perfil...), respetamos el padding del sistema para que no se solape con la hora.
         val topPadding = if (currentRoute == Screen.Camera.route) 0.dp else innerPadding.calculateTopPadding()
-
-        // 2. BOTTOM PADDING:
-        // En result_screen aplicamos el padding del Scaffold para que el botón "Continuar" no quede
-        // tapado por la barra. En Home/Profile lo dejamos en 0.dp para el efecto transparente.
         val bottomPadding = when {
             currentRoute?.startsWith("result_screen") == true -> innerPadding.calculateBottomPadding()
             showBottomNav -> 0.dp
@@ -119,6 +119,7 @@ fun MainScreen(
 
         GarbiaNav(
             navController = navController,
+            startDestination = startRoute,
             modifier = Modifier.padding(top = topPadding, bottom = bottomPadding),
             currentTheme = currentTheme,
             onThemeChanged = onThemeChanged
@@ -132,21 +133,27 @@ fun MainScreen(
 @Composable
 fun GarbiaNav(
     navController: NavHostController,
+    startDestination: String,
     modifier: Modifier = Modifier,
     currentTheme: AppThemeColor,
     onThemeChanged: (AppThemeColor) -> Unit
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
+        // ONBOARDING
+        composable(Screen.Onboarding.route) {
+            OnboardingScreen(navController)
+        }
+
         // 1. HOME SCREEN
         composable(Screen.Home.route) {
             HomeScreen(navController)
         }
 
-        // 2. PROFILE SCREEN (Necesita callbacks del tema)
+        // 2. PROFILE SCREEN
         composable(Screen.Profile.route) {
             ProfileScreen(
                 currentTheme = currentTheme,

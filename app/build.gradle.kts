@@ -74,6 +74,9 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-firestore-ktx")
 
+    // DataStore (Preferencias persistentes)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
     // Room (Base de datos local)
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
