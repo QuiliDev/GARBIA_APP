@@ -8,8 +8,9 @@ sealed class Screen(val route: String) {
     object Result  : Screen("result_screen/{photoUri}")
 
     // Secciones de acceso rápido
-    object Ranking : Screen("ranking_screen")
-    object Premios : Screen("premios_screen")
-    object Tips    : Screen("tips_screen")
-    object Mapas   : Screen("mapas_screen")
+    object Ranking    : Screen("ranking_screen")
+    object Premios    : Screen("premios_screen")
+    object Tips       : Screen("tips_screen")
+    object Mapas      : Screen("mapas_screen")
+    object Onboarding : Screen("onboarding_screen")
 }
