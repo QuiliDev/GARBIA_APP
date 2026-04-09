@@ -16,7 +16,8 @@ import javax.inject.Singleton
 class UsuarioRepository @Inject constructor(
     private val usuarioDao: UsuarioDao,
     private val escaneoDao: EscaneoDao,
-    private val firestoreService: FirestoreService
+    private val firestoreService: FirestoreService,
+    private val logrosRepository: LogrosRepository
 ) {
     fun getUsuario(): Flow<Usuario?> =
         usuarioDao.getUsuario().map { it?.toDomain() }
@@ -26,6 +27,7 @@ class UsuarioRepository @Inject constructor(
 
     suspend fun inicializarSiNecesario() {
         usuarioDao.crearSiNoExiste(UsuarioEntity(nombre = "Usuario"))
+        logrosRepository.inicializarLogros()
     }
 
     suspend fun registrarEscaneo(
@@ -46,16 +48,21 @@ class UsuarioRepository @Inject constructor(
         )
         usuarioDao.sumarPuntos(puntos, co2)
 
-        // Sync actualizado a Firestore (best-effort, no bloquea si falla)
         val usuario = usuarioDao.getUsuarioOnce()
         if (usuario != null) {
+            logrosRepository.verificarLogros(
+                escaneos = usuario.escaneosTotales,
+                puntos   = usuario.puntosTotales,
+                co2      = usuario.co2Ahorrado
+            )
+
             val uid = usuario.firebaseUid ?: "local_user"
             firestoreService.sincronizarUsuario(
-                uid    = uid,
-                nombre = usuario.nombre,
-                puntos = usuario.puntosTotales,
+                uid      = uid,
+                nombre   = usuario.nombre,
+                puntos   = usuario.puntosTotales,
                 escaneos = usuario.escaneosTotales,
-                co2    = usuario.co2Ahorrado
+                co2      = usuario.co2Ahorrado
             )
         }
     }
