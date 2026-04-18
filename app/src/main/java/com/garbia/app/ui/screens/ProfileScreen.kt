@@ -15,12 +15,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import com.garbia.app.ui.Screen
 import com.garbia.app.ui.components.*
 import com.garbia.app.ui.theme.AppThemeColor
 import com.garbia.app.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
+    navController: NavController,
     currentTheme: AppThemeColor,
     onThemeChanged: (AppThemeColor) -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
@@ -71,6 +74,14 @@ fun ProfileScreen(
 
                 SectionTitle("General")
                 ProfileMenuCard {
+                    ProfileOptionItem(
+                        icon      = Icons.Outlined.EmojiEvents,
+                        title     = "Mis Logros",
+                        subtitle  = "Badges y recompensas",
+                        iconColor = Color(0xFFFFC107),
+                        onClick   = { navController.navigate(Screen.Logros.route) }
+                    )
+                    Divider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     ProfileOptionItem(
                         icon      = Icons.Outlined.Palette,
                         title     = "Apariencia",

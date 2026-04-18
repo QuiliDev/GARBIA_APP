@@ -156,9 +156,15 @@ fun GarbiaNav(
         // 2. PROFILE SCREEN
         composable(Screen.Profile.route) {
             ProfileScreen(
-                currentTheme = currentTheme,
+                navController  = navController,
+                currentTheme   = currentTheme,
                 onThemeChanged = onThemeChanged
             )
+        }
+
+        // LOGROS
+        composable(Screen.Logros.route) {
+            LogrosScreen(navController)
         }
 
         // 3. CÁMARA
