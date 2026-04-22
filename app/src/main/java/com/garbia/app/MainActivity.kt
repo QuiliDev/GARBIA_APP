@@ -189,6 +189,11 @@ fun GarbiaNav(
             LogrosScreen(navController)
         }
 
+        // ESTADÍSTICAS
+        composable(Screen.Estadisticas.route) {
+            EstadisticasScreen(navController)
+        }
+
         // 3. CÁMARA
         composable(Screen.Camera.route) {
             CameraScreen(navController)

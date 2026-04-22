@@ -17,4 +17,7 @@ interface EscaneoDao {
 
     @Query("SELECT COUNT(*) FROM escaneos WHERE tipoMaterial = :tipo")
     suspend fun contarPorTipo(tipo: String): Int
+
+    @Query("SELECT * FROM escaneos WHERE fechaTimestamp >= :desde ORDER BY fechaTimestamp ASC")
+    suspend fun getEscaneosDesdeFecha(desde: Long): List<EscaneoEntity>
 }
