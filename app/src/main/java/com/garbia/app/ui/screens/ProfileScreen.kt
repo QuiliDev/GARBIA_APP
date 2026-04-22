@@ -99,6 +99,17 @@ fun ProfileScreen(
                     )
                 }
 
+                SectionTitle("Progreso")
+                ProfileMenuCard {
+                    ProfileOptionItem(
+                        icon      = Icons.Outlined.BarChart,
+                        title     = "Estadísticas",
+                        subtitle  = "Actividad de los últimos 7 días",
+                        iconColor = Color(0xFF3F51B5),
+                        onClick   = { navController.navigate(Screen.Estadisticas.route) }
+                    )
+                }
+
                 SectionTitle("Soporte")
                 ProfileMenuCard {
                     ProfileOptionItem(
