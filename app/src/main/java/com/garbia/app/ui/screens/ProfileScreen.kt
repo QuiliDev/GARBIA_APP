@@ -75,6 +75,14 @@ fun ProfileScreen(
                 SectionTitle("General")
                 ProfileMenuCard {
                     ProfileOptionItem(
+                        icon      = Icons.Outlined.History,
+                        title     = "Mi Historial",
+                        subtitle  = "Todos tus escaneos",
+                        iconColor = Color(0xFF00BCD4),
+                        onClick   = { navController.navigate(Screen.Historial.route) }
+                    )
+                    Divider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    ProfileOptionItem(
                         icon      = Icons.Outlined.EmojiEvents,
                         title     = "Mis Logros",
                         subtitle  = "Badges y recompensas",

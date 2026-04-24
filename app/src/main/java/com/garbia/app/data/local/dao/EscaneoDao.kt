@@ -20,4 +20,7 @@ interface EscaneoDao {
 
     @Query("SELECT * FROM escaneos WHERE fechaTimestamp >= :desde ORDER BY fechaTimestamp ASC")
     suspend fun getEscaneosDesdeFecha(desde: Long): List<EscaneoEntity>
+
+    @Query("SELECT * FROM escaneos ORDER BY fechaTimestamp DESC")
+    fun getAllEscaneos(): Flow<List<EscaneoEntity>>
 }
