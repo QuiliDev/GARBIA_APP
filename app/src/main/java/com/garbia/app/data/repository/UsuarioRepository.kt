@@ -17,7 +17,8 @@ class UsuarioRepository @Inject constructor(
     private val usuarioDao: UsuarioDao,
     private val escaneoDao: EscaneoDao,
     private val firestoreService: FirestoreService,
-    private val logrosRepository: LogrosRepository
+    private val logrosRepository: LogrosRepository,
+    private val rachaRepository: RachaRepository
 ) {
     fun getUsuario(): Flow<Usuario?> =
         usuarioDao.getUsuario().map { it?.toDomain() }
@@ -50,6 +51,7 @@ class UsuarioRepository @Inject constructor(
 
         val usuario = usuarioDao.getUsuarioOnce()
         if (usuario != null) {
+            rachaRepository.registrarEscaneoHoy()
             logrosRepository.verificarLogros(
                 escaneos = usuario.escaneosTotales,
                 puntos   = usuario.puntosTotales,
