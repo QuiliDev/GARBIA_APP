@@ -199,6 +199,11 @@ fun GarbiaNav(
             HistorialScreen(navController)
         }
 
+        // EDITAR PERFIL
+        composable(Screen.EditProfile.route) {
+            EditProfileScreen(navController)
+        }
+
         // 3. CÁMARA
         composable(Screen.Camera.route) {
             CameraScreen(navController)

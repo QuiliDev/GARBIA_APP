@@ -75,6 +75,14 @@ fun ProfileScreen(
                 SectionTitle("General")
                 ProfileMenuCard {
                     ProfileOptionItem(
+                        icon      = Icons.Outlined.Edit,
+                        title     = "Editar perfil",
+                        subtitle  = "Cambiar nombre de usuario",
+                        iconColor = Color(0xFF9C27B0),
+                        onClick   = { navController.navigate(Screen.EditProfile.route) }
+                    )
+                    Divider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    ProfileOptionItem(
                         icon      = Icons.Outlined.History,
                         title     = "Mi Historial",
                         subtitle  = "Todos tus escaneos",
