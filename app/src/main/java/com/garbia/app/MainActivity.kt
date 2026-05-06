@@ -34,17 +34,33 @@ import com.garbia.app.ui.components.GarbiaTopBar
 import com.garbia.app.ui.screens.*
 import com.garbia.app.ui.theme.AppThemeColor
 import com.garbia.app.ui.theme.GarbiaAppTheme
+import com.garbia.app.data.worker.RecordatorioWorker
 import com.garbia.app.ui.viewmodel.OnboardingViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.net.URLDecoder
+import java.util.concurrent.TimeUnit
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        programarRecordatorioDiario()
         setContent {
             GarbiaAppMain()
         }
+    }
+
+    private fun programarRecordatorioDiario() {
+        val request = PeriodicWorkRequestBuilder<RecordatorioWorker>(1, TimeUnit.DAYS)
+            .build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            RecordatorioWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
     }
 }
 

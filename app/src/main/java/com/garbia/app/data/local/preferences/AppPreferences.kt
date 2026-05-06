@@ -24,7 +24,15 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         context.appDataStore.edit { it[Keys.HAS_SEEN_ONBOARDING] = value }
     }
 
+    val hasScheduledReminder: Flow<Boolean> = context.appDataStore.data
+        .map { prefs -> prefs[Keys.HAS_SCHEDULED_REMINDER] ?: false }
+
+    suspend fun setHasScheduledReminder(value: Boolean) {
+        context.appDataStore.edit { it[Keys.HAS_SCHEDULED_REMINDER] = value }
+    }
+
     private object Keys {
-        val HAS_SEEN_ONBOARDING = booleanPreferencesKey("has_seen_onboarding")
+        val HAS_SEEN_ONBOARDING    = booleanPreferencesKey("has_seen_onboarding")
+        val HAS_SCHEDULED_REMINDER = booleanPreferencesKey("has_scheduled_reminder")
     }
 }
