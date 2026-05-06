@@ -77,6 +77,11 @@ dependencies {
     // DataStore (Preferencias persistentes)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // WorkManager (Notificaciones programadas)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    kapt("androidx.hilt:hilt-compiler:1.1.0")
+
     // Room (Base de datos local)
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
