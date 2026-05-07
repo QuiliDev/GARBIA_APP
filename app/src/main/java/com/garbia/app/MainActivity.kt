@@ -220,6 +220,11 @@ fun GarbiaNav(
             EditProfileScreen(navController)
         }
 
+        // GUÍA DE RECICLAJE
+        composable(Screen.Guia.route) {
+            GuiaReciclajeScreen(navController)
+        }
+
         // 3. CÁMARA
         composable(Screen.Camera.route) {
             CameraScreen(navController)

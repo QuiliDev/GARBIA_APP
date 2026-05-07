@@ -69,6 +69,13 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
                 Spacer(Modifier.height(4.dp).offset(y = (-30).dp))
             }
 
+            GuiaQuickAccessCard(
+                modifier = Modifier
+                    .offset(y = (-28).dp)
+                    .padding(horizontal = 24.dp),
+                onClick  = { navController.navigate(com.garbia.app.ui.Screen.Guia.route) }
+            )
+
             Spacer(modifier = Modifier.height(10.dp).offset(y = (-40).dp))
 
             DidYouKnowSection(modifier = Modifier.offset(y = (-40).dp))
@@ -88,6 +95,42 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel = hiltView
             modifier = Modifier.align(Alignment.TopCenter)
         ) {
             GarbiaTopBar(navController, isOverDarkBackground = true)
+        }
+    }
+}
+
+@Composable
+private fun GuiaQuickAccessCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Card(
+        modifier  = modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(16.dp),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        onClick   = onClick
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("♻️", fontSize = 26.sp)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Guía de Reciclaje",
+                    fontWeight = FontWeight.Bold,
+                    fontSize   = 14.sp,
+                    color      = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    "¿Dónde va cada residuo?",
+                    fontSize = 12.sp,
+                    color    = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+            }
+            Icon(
+                Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
         }
     }
 }
