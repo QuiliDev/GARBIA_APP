@@ -27,4 +27,7 @@ interface UsuarioDao {
 
     @Query("UPDATE usuario SET nombre = :nombre WHERE id = 1")
     suspend fun actualizarNombre(nombre: String)
+
+    @Query("UPDATE usuario SET puntosTotales = MAX(0, puntosTotales - :puntos) WHERE id = 1")
+    suspend fun restarPuntos(puntos: Int)
 }
