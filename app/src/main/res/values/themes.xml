@@ -2,4 +2,11 @@
 <resources>
 
     <style name="Theme.GarbiaApp" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.GarbiaApp.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#1B5E20</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.GarbiaApp</item>
+    </style>
+
 </resources>
