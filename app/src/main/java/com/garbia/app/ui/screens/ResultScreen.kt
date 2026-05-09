@@ -1,5 +1,6 @@
 package com.garbia.app.ui.screens
 
+import android.content.Intent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +20,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,8 +49,8 @@ fun ResultScreen(
     photoUri: String,
     viewModel: ResultViewModel = hiltViewModel()
 ) {
-    val resultado = remember { viewModel.getResultado() }
-    val displayData = remember(resultado) { resultado.toDisplayData() }
+    val resultado    = remember { viewModel.getResultado() }
+    val displayData  = remember(resultado) { resultado.toDisplayData() }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (displayData == null) {
@@ -56,8 +58,8 @@ fun ResultScreen(
         } else {
             SuccessfulResultView(
                 navController = navController,
-                data = displayData,
-                onContinuar = {
+                data          = displayData,
+                onContinuar   = {
                     viewModel.confirmarEscaneo(resultado)
                     navController.navigate("home_screen") {
                         popUpTo("home_screen") { inclusive = true }
@@ -71,11 +73,11 @@ fun ResultScreen(
 private fun ResultadoEscaneo.toDisplayData(): RecycleResultData? {
     if (!identificado) return null
     return when (tipoMaterial.lowercase()) {
-        "vidrio" -> RecycleResultData(Color(0xFF00A550), contenedor, tipoMaterial.uppercase(), descripcion, puntos, co2Ahorrado, Icons.Outlined.LocalDrink,   "¡Excelente reciclaje!")
+        "vidrio"                          -> RecycleResultData(Color(0xFF00A550), contenedor, tipoMaterial.uppercase(), descripcion, puntos, co2Ahorrado, Icons.Outlined.LocalDrink,   "¡Excelente reciclaje!")
         "plástico", "plastico", "envases" -> RecycleResultData(Color(0xFFFFC107), contenedor, tipoMaterial.uppercase(), descripcion, puntos, co2Ahorrado, Icons.Outlined.ShoppingBag, "¡Bien hecho!")
-        "papel", "cartón", "carton" -> RecycleResultData(Color(0xFF2979FF), contenedor, tipoMaterial.uppercase(), descripcion, puntos, co2Ahorrado, Icons.Outlined.Description,  "¡Perfecto!")
-        "orgánico", "organico" -> RecycleResultData(Color(0xFF8BC34A), contenedor, tipoMaterial.uppercase(), descripcion, puntos, co2Ahorrado, Icons.Outlined.Grass,        "¡Genial!")
-        else -> RecycleResultData(Color(0xFF607D8B), contenedor, tipoMaterial.uppercase(), descripcion, puntos, co2Ahorrado, Icons.Outlined.Delete, "¡Buen trabajo!")
+        "papel", "cartón", "carton"       -> RecycleResultData(Color(0xFF2979FF), contenedor, tipoMaterial.uppercase(), descripcion, puntos, co2Ahorrado, Icons.Outlined.Description,  "¡Perfecto!")
+        "orgánico", "organico"            -> RecycleResultData(Color(0xFF8BC34A), contenedor, tipoMaterial.uppercase(), descripcion, puntos, co2Ahorrado, Icons.Outlined.Grass,        "¡Genial!")
+        else                              -> RecycleResultData(Color(0xFF607D8B), contenedor, tipoMaterial.uppercase(), descripcion, puntos, co2Ahorrado, Icons.Outlined.Delete,        "¡Buen trabajo!")
     }
 }
 
@@ -86,11 +88,20 @@ fun SuccessfulResultView(
     data: RecycleResultData,
     onContinuar: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f, targetValue = 1.1f,
         animationSpec = infiniteRepeatable(tween(1000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "scale"
+    )
+
+    // Contador animado de puntos
+    val puntosAnimados by animateIntAsState(
+        targetValue  = data.points,
+        animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
+        label        = "puntos_counter"
     )
 
     Box(
@@ -121,8 +132,8 @@ fun SuccessfulResultView(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape    = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
+                colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(16.dp)
             ) {
                 Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -142,18 +153,42 @@ fun SuccessfulResultView(
                         modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray.copy(alpha = 0.2f), RoundedCornerShape(16.dp)).padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        StatColumn(points = "+${data.points}", label = "Puntos", color = data.themeColor)
+                        // Contador animado de puntos
+                        StatColumn(points = "+$puntosAnimados", label = "Puntos", color = data.themeColor)
                         Box(modifier = Modifier.width(1.dp).height(40.dp).background(Color.Gray.copy(alpha = 0.2f)))
                         StatColumn(points = "${data.co2Ahorrado}kg", label = "CO₂ Ahorrado", color = Color.Gray)
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Botón Compartir
+                    OutlinedButton(
+                        onClick = {
+                            val texto = "¡Acabo de reciclar ${data.containerName} correctamente con GarbiaApp! " +
+                                    "+${data.points} puntos y ${data.co2Ahorrado}kg de CO₂ ahorrado ♻️ #Garbia #Reciclaje"
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, texto)
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Compartir logro"))
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape    = RoundedCornerShape(14.dp),
+                        colors   = ButtonDefaults.outlinedButtonColors(contentColor = data.themeColor),
+                        border   = androidx.compose.foundation.BorderStroke(1.dp, data.themeColor.copy(alpha = 0.5f))
+                    ) {
+                        Icon(Icons.Outlined.Share, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Compartir logro", fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Button(
-                        onClick = onContinuar,
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = data.themeColor),
-                        shape = RoundedCornerShape(16.dp)
+                        onClick   = onContinuar,
+                        modifier  = Modifier.fillMaxWidth().height(56.dp),
+                        colors    = ButtonDefaults.buttonColors(containerColor = data.themeColor),
+                        shape     = RoundedCornerShape(16.dp)
                     ) {
                         Text("Continuar", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
@@ -174,8 +209,8 @@ fun StatColumn(points: String, label: String, color: Color) {
 // --- 4. VISTA ERROR ---
 @Composable
 fun NoIdentifiedResultView(navController: NavController) {
-    val darkBg    = Color(0xFF1A1C1E)
-    val cardBg    = Color(0xFF2B2D30)
+    val darkBg      = Color(0xFF1A1C1E)
+    val cardBg      = Color(0xFF2B2D30)
     val accentColor = Color(0xFFFF6F00)
 
     Box(modifier = Modifier.fillMaxSize().background(darkBg)) {
@@ -216,14 +251,14 @@ fun NoIdentifiedResultView(navController: NavController) {
                 OutlinedButton(
                     onClick = { },
                     modifier = Modifier.weight(1f).height(56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
+                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                    border   = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
                 ) { Text("Reportar") }
 
                 Button(
-                    onClick = { navController.popBackStack() },
+                    onClick  = { navController.popBackStack() },
                     modifier = Modifier.weight(1f).height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+                    colors   = ButtonDefaults.buttonColors(containerColor = accentColor)
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
