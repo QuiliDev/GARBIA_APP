@@ -16,9 +16,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.compose.ui.unit.sp
 import com.garbia.app.ui.Screen
 import com.garbia.app.ui.components.*
 import com.garbia.app.ui.theme.AppThemeColor
+import com.garbia.app.ui.viewmodel.AuthViewModel
+import com.garbia.app.ui.viewmodel.EstadoAuth
 import com.garbia.app.ui.viewmodel.ProfileViewModel
 
 @Composable
@@ -26,10 +29,12 @@ fun ProfileScreen(
     navController: NavController,
     currentTheme: AppThemeColor,
     onThemeChanged: (AppThemeColor) -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    val usuario by viewModel.usuario.collectAsStateWithLifecycle()
-    val scrollState = rememberScrollState()
+    val usuario      by viewModel.usuario.collectAsStateWithLifecycle()
+    val estadoAuth   by authViewModel.estado.collectAsStateWithLifecycle()
+    val scrollState  = rememberScrollState()
     var showThemeDialog by remember { mutableStateOf(false) }
 
     if (showThemeDialog) {
@@ -124,6 +129,47 @@ fun ProfileScreen(
                         iconColor = Color(0xFF3F51B5),
                         onClick   = { navController.navigate(Screen.Estadisticas.route) }
                     )
+                }
+
+                SectionTitle("Cuenta")
+                ProfileMenuCard {
+                    when (estadoAuth) {
+                        is EstadoAuth.Autenticado -> {
+                            val uid = (estadoAuth as EstadoAuth.Autenticado).uid
+                            ProfileOptionItem(
+                                icon      = Icons.Outlined.CloudDone,
+                                title     = "Sincronizado con Firebase",
+                                subtitle  = "UID: ${uid.take(12)}…",
+                                iconColor = Color(0xFF4CAF50),
+                                onClick   = {}
+                            )
+                            Divider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            ProfileOptionItem(
+                                icon      = Icons.Outlined.Logout,
+                                title     = "Cerrar sesión Firebase",
+                                subtitle  = "Volver a modo local",
+                                iconColor = MaterialTheme.colorScheme.error,
+                                onClick   = { authViewModel.cerrarSesion() }
+                            )
+                        }
+                        EstadoAuth.Cargando -> {
+                            Row(modifier = Modifier.padding(16.dp)) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                Spacer(Modifier.width(12.dp))
+                                Text("Conectando con Firebase…", fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        EstadoAuth.Local -> {
+                            ProfileOptionItem(
+                                icon      = Icons.Outlined.CloudOff,
+                                title     = "Modo local",
+                                subtitle  = "Sin sincronización Firebase",
+                                iconColor = Color(0xFF9E9E9E),
+                                onClick   = {}
+                            )
+                        }
+                    }
                 }
 
                 SectionTitle("Soporte")
