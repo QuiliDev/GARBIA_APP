@@ -17,7 +17,7 @@ class ProcessingViewModel @Inject constructor(
     private val resultHolder: EscaneoResultHolder
 ) : ViewModel() {
 
-    private val _statusText = MutableStateFlow("Subiendo imagen...")
+    private val _statusText  = MutableStateFlow("Preparando imagen…")
     val statusText: StateFlow<String> = _statusText
 
     private val _analisisDone = MutableStateFlow(false)
@@ -26,16 +26,21 @@ class ProcessingViewModel @Inject constructor(
     fun analizarFoto(photoUri: String) {
         if (_analisisDone.value) return
         viewModelScope.launch {
-            _statusText.value = "Subiendo imagen..."
-            delay(1500)
-            _statusText.value = "Consultando modelo IA..."
-            delay(1500)
-            _statusText.value = "Identificando material..."
+            _statusText.value = "Preparando imagen…"
+            delay(800)
+            _statusText.value = "Enviando al modelo IA…"
+            delay(1_200)
+            _statusText.value = "Analizando material…"
 
             val resultado = apiService.clasificarImagen(photoUri)
             resultHolder.resultado = resultado
 
-            delay(500)
+            _statusText.value = if (resultado.identificado)
+                "✓ ${resultado.tipoMaterial} identificado"
+            else
+                "No se pudo identificar el material"
+
+            delay(400)
             _analisisDone.value = true
         }
     }
