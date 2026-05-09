@@ -54,6 +54,8 @@ import androidx.navigation.NavController
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.stringResource
+import com.garbia.app.R
 
 // RECIBIMOS EL navController
 @Composable
@@ -89,10 +91,10 @@ fun CameraScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = "Necesitamos acceso a la cámara para escanear residuos.")
+            Text(text = stringResource(R.string.camera_permission_rationale))
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }) {
-                Text("Conceder Permiso")
+                Text(stringResource(R.string.camera_btn_grant))
             }
         }
     }
@@ -178,7 +180,7 @@ fun CameraScannerView(navController: NavController) {
                     onClick = { navController.popBackStack() },
                     modifier = Modifier.background(Color.Black.copy(alpha = 0.4f), CircleShape)
                 ) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Cerrar", tint = Color.White)
+                    Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.camera_content_desc_close), tint = Color.White)
                 }
             }
 
@@ -186,7 +188,7 @@ fun CameraScannerView(navController: NavController) {
 
             // 2. TEXTO DE INSTRUCCIONES
             Text(
-                text = "Encuadra el residuo y dispara",
+                text = stringResource(R.string.camera_instruction),
                 color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -214,7 +216,7 @@ fun CameraScannerView(navController: NavController) {
                     },
                     modifier = Modifier.background(Color.Black.copy(alpha = 0.4f), CircleShape).size(56.dp)
                 ) {
-                    Icon(Icons.Default.PhotoLibrary, contentDescription = "Galería", tint = Color.White)
+                    Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(R.string.camera_content_desc_gallery), tint = Color.White)
                 }
 
                 // --- BOTÓN CENTRAL: DISPARADOR ---
@@ -236,7 +238,7 @@ fun CameraScannerView(navController: NavController) {
                                     navController.navigate("preview_screen/$encodedUri")
                                 }
                                 override fun onError(exception: androidx.camera.core.ImageCaptureException) {
-                                    android.widget.Toast.makeText(context, "Error al hacer la foto", android.widget.Toast.LENGTH_SHORT).show()
+                                    android.widget.Toast.makeText(context, context.getString(R.string.camera_error_capture), android.widget.Toast.LENGTH_SHORT).show()
                                 }
                             }
                         )
@@ -259,7 +261,7 @@ fun CameraScannerView(navController: NavController) {
                 ) {
                     Icon(
                         imageVector = if (isFlashOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
-                        contentDescription = "Flash",
+                        contentDescription = stringResource(R.string.camera_content_desc_flash),
                         tint = if (isFlashOn) Color.Yellow else Color.White
                     )
                 }
