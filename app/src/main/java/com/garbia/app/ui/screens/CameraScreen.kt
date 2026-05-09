@@ -1,9 +1,14 @@
 package com.garbia.app.ui.screens
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -12,38 +17,24 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,65 +42,142 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.res.stringResource
 import com.garbia.app.R
 
-// RECIBIMOS EL navController
+enum class CameraPermissionState {
+    LOADING, NEEDED, PERMANENTLY_DENIED, NO_HARDWARE, READY, ERROR
+}
+
 @Composable
 fun CameraScreen(navController: NavController) {
     val context = LocalContext.current
+    val activity = context as? Activity
 
-    var hasCameraPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
-        )
+    var permState by remember {
+        val granted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+        mutableStateOf(if (granted) CameraPermissionState.READY else CameraPermissionState.LOADING)
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
-        onResult = { isGranted -> hasCameraPermission = isGranted }
+        onResult = { isGranted ->
+            permState = if (isGranted) {
+                CameraPermissionState.READY
+            } else {
+                val canAsk = activity?.shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) ?: false
+                if (canAsk) CameraPermissionState.NEEDED else CameraPermissionState.PERMANENTLY_DENIED
+            }
+        }
     )
 
     LaunchedEffect(Unit) {
-        if (!hasCameraPermission) {
+        if (permState == CameraPermissionState.LOADING) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 
-    if (hasCameraPermission) {
-        // PASAMOS EL navController AL ESCÁNER
-        CameraScannerView(navController)
-    } else {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = stringResource(R.string.camera_permission_rationale))
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }) {
-                Text(stringResource(R.string.camera_btn_grant))
+    when (permState) {
+        CameraPermissionState.LOADING -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
+        }
+        CameraPermissionState.READY -> {
+            CameraScannerView(
+                navController = navController,
+                onNoHardware  = { permState = CameraPermissionState.NO_HARDWARE },
+                onInitError   = { permState = CameraPermissionState.ERROR }
+            )
+        }
+        CameraPermissionState.NEEDED -> {
+            CameraErrorScreen(
+                message    = stringResource(R.string.camera_permission_rationale),
+                buttonText = stringResource(R.string.camera_btn_grant),
+                onAction   = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                onBack     = { navController.popBackStack() }
+            )
+        }
+        CameraPermissionState.PERMANENTLY_DENIED -> {
+            CameraErrorScreen(
+                message    = stringResource(R.string.camera_permission_denied),
+                buttonText = stringResource(R.string.camera_btn_settings),
+                onAction   = {
+                    val intent = Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", context.packageName, null)
+                    )
+                    context.startActivity(intent)
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        CameraPermissionState.NO_HARDWARE -> {
+            CameraErrorScreen(
+                message    = stringResource(R.string.camera_no_hardware),
+                buttonText = stringResource(R.string.btn_back),
+                onAction   = { navController.popBackStack() },
+                onBack     = { navController.popBackStack() }
+            )
+        }
+        CameraPermissionState.ERROR -> {
+            CameraErrorScreen(
+                message    = stringResource(R.string.camera_error_init),
+                buttonText = stringResource(R.string.camera_btn_retry),
+                onAction   = { permState = CameraPermissionState.READY },
+                onBack     = { navController.popBackStack() }
+            )
         }
     }
 }
 
 @Composable
-fun CameraScannerView(navController: NavController) {
+private fun CameraErrorScreen(
+    message: String,
+    buttonText: String,
+    onAction: () -> Unit,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(24.dp))
+        Button(
+            onClick = onAction,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(buttonText)
+        }
+        Spacer(Modifier.height(12.dp))
+        TextButton(onClick = onBack) {
+            Text(stringResource(R.string.btn_back))
+        }
+    }
+}
+
+@Composable
+fun CameraScannerView(
+    navController: NavController,
+    onNoHardware: () -> Unit = {},
+    onInitError:  () -> Unit = {}
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val imageCapture = remember { ImageCapture.Builder().build() }
-
-    // ✅ MAGIA DEL TEMA: Obtenemos el color principal de la app
     val mainColor = MaterialTheme.colorScheme.primary
 
-    // --- NUEVAS VARIABLES DE ESTADO ---
     var camera by remember { mutableStateOf<androidx.camera.core.Camera?>(null) }
     var isFlashOn by remember { mutableStateOf(false) }
 
@@ -117,59 +185,51 @@ fun CameraScannerView(navController: NavController) {
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri ->
             if (uri != null) {
-                Log.d("Camara", "Foto de galería seleccionada: $uri")
                 val encodedUri = java.net.URLEncoder.encode(uri.toString(), "UTF-8")
                 navController.navigate("preview_screen/$encodedUri")
-            } else {
-                Log.d("Camara", "No se seleccionó ninguna foto")
             }
         }
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // --- CAPA 1 (FONDO): EL VISOR DE LA CÁMARA ---
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
                 val previewView = PreviewView(ctx)
-                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-
-                cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
+                val future = ProcessCameraProvider.getInstance(ctx)
+                future.addListener({
+                    val provider = future.get()
                     val preview = Preview.Builder().build().also {
                         it.setSurfaceProvider(previewView.surfaceProvider)
                     }
-                    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
                     try {
-                        cameraProvider.unbindAll()
-                        val cam = cameraProvider.bindToLifecycle(
+                        provider.unbindAll()
+                        val cam = provider.bindToLifecycle(
                             lifecycleOwner,
-                            cameraSelector,
+                            CameraSelector.DEFAULT_BACK_CAMERA,
                             preview,
                             imageCapture
                         )
                         camera = cam
-                    } catch (exc: Exception) {
-                        Log.e("CameraScreen", "Error al encender la cámara", exc)
+                    } catch (e: androidx.camera.core.CameraInfoUnavailableException) {
+                        Log.e("CameraScreen", "No hay cámara trasera", e)
+                        onNoHardware()
+                    } catch (e: Exception) {
+                        Log.e("CameraScreen", "Error al inicializar cámara", e)
+                        onInitError()
                     }
                 }, ContextCompat.getMainExecutor(ctx))
                 previewView
             }
         )
 
-        // --- CAPA 2 (MEDIO): LA MÁSCARA DE ESCÁNER OPACO ---
-        ScannerOverlay(
-            scanSize = 320.dp,
-            cornerRadius = 32.dp
-        )
+        ScannerOverlay(scanSize = 320.dp, cornerRadius = 32.dp)
 
-        // --- CAPA 3 (FRENTE): LA INTERFAZ DE USUARIO ---
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. BARRA SUPERIOR (Botón Cerrar)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -180,13 +240,16 @@ fun CameraScannerView(navController: NavController) {
                     onClick = { navController.popBackStack() },
                     modifier = Modifier.background(Color.Black.copy(alpha = 0.4f), CircleShape)
                 ) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.camera_content_desc_close), tint = Color.White)
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = stringResource(R.string.camera_content_desc_close),
+                        tint = Color.White
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.weight(0.5f))
+            Spacer(Modifier.weight(0.5f))
 
-            // 2. TEXTO DE INSTRUCCIONES
             Text(
                 text = stringResource(R.string.camera_instruction),
                 color = Color.White,
@@ -195,10 +258,9 @@ fun CameraScannerView(navController: NavController) {
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
-            Spacer(modifier = Modifier.height(320.dp))
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(Modifier.height(320.dp))
+            Spacer(Modifier.weight(1f))
 
-            // 4. LA BOTONERA INFERIOR
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -206,20 +268,23 @@ fun CameraScannerView(navController: NavController) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
-                // --- BOTÓN IZQUIERDO: GALERÍA ---
                 IconButton(
                     onClick = {
                         photoPickerLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
                     },
-                    modifier = Modifier.background(Color.Black.copy(alpha = 0.4f), CircleShape).size(56.dp)
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                        .size(56.dp)
                 ) {
-                    Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(R.string.camera_content_desc_gallery), tint = Color.White)
+                    Icon(
+                        Icons.Default.PhotoLibrary,
+                        contentDescription = stringResource(R.string.camera_content_desc_gallery),
+                        tint = Color.White
+                    )
                 }
 
-                // --- BOTÓN CENTRAL: DISPARADOR ---
                 IconButton(
                     onClick = {
                         val photoFile = java.io.File(
@@ -227,37 +292,45 @@ fun CameraScannerView(navController: NavController) {
                             "GarbiA_scan_${System.currentTimeMillis()}.jpg"
                         )
                         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-
                         imageCapture.takePicture(
                             outputOptions,
                             ContextCompat.getMainExecutor(context),
                             object : ImageCapture.OnImageSavedCallback {
-                                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                                    val savedUri = outputFileResults.savedUri ?: android.net.Uri.fromFile(photoFile)
+                                override fun onImageSaved(result: ImageCapture.OutputFileResults) {
+                                    val savedUri = result.savedUri ?: android.net.Uri.fromFile(photoFile)
                                     val encodedUri = java.net.URLEncoder.encode(savedUri.toString(), "UTF-8")
                                     navController.navigate("preview_screen/$encodedUri")
                                 }
                                 override fun onError(exception: androidx.camera.core.ImageCaptureException) {
-                                    android.widget.Toast.makeText(context, context.getString(R.string.camera_error_capture), android.widget.Toast.LENGTH_SHORT).show()
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        context.getString(R.string.camera_error_capture),
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         )
                     },
                     modifier = Modifier.size(80.dp)
                 ) {
-                    Box(modifier = Modifier.fillMaxSize().border(4.dp, Color.White, CircleShape).padding(8.dp)) {
-                        // ✅ APLICAMOS EL mainColor AL CÍRCULO INTERIOR DEL BOTÓN
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .border(4.dp, Color.White, CircleShape)
+                            .padding(8.dp)
+                    ) {
                         Box(modifier = Modifier.fillMaxSize().background(mainColor, CircleShape))
                     }
                 }
 
-                // --- BOTÓN DERECHO: FLASH (Linterna) ---
                 IconButton(
                     onClick = {
                         isFlashOn = !isFlashOn
                         camera?.cameraControl?.enableTorch(isFlashOn)
                     },
-                    modifier = Modifier.background(Color.Black.copy(alpha = 0.4f), CircleShape).size(56.dp)
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                        .size(56.dp)
                 ) {
                     Icon(
                         imageVector = if (isFlashOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
@@ -270,109 +343,87 @@ fun CameraScannerView(navController: NavController) {
     }
 }
 
-// --- COMPONENTE FUSIONADO: CAPA OPACO + ESQUINAS EN "L" REDONDEADAS ---
 @Composable
 fun ScannerOverlay(
     modifier: Modifier = Modifier,
-    scanSize: Dp = 320.dp,          // Tamaño del área transparente central
-    cornerRadius: Dp = 32.dp,       // Redondeo del agujero y de las esquinas en "L"
-    overlayColor: Color = Color.Black.copy(alpha = 0.5f), // Color del fondo opaco
-    cornerColor: Color = MaterialTheme.colorScheme.primary, // Color de las esquinas en "L"
-    cornerStrokeWidth: Dp = 5.dp,     // Grosor de las líneas de las esquinas
-    cornerLength: Dp = 40.dp          // Longitud de las "patitas" de las esquinas
+    scanSize: Dp = 320.dp,
+    cornerRadius: Dp = 32.dp,
+    overlayColor: Color = Color.Black.copy(alpha = 0.5f),
+    cornerColor: Color = MaterialTheme.colorScheme.primary,
+    cornerStrokeWidth: Dp = 5.dp,
+    cornerLength: Dp = 40.dp
 ) {
     androidx.compose.foundation.Canvas(modifier = modifier.fillMaxSize()) {
-        val scanSizePx = scanSize.toPx()
+        val scanSizePx     = scanSize.toPx()
         val cornerRadiusPx = cornerRadius.toPx()
-        val screenWidth = size.width
-        val screenHeight = size.height
+        val left   = (size.width  - scanSizePx) / 2
+        val top    = (size.height - scanSizePx) / 2
+        val right  = left + scanSizePx
+        val bottom = top  + scanSizePx
 
-        // 1. Calcular la posición para centrar el cuadrado
-        val left = (screenWidth - scanSizePx) / 2
-        val top = (screenHeight - scanSizePx) / 2
-        val right = left + scanSizePx
-        val bottom = top + scanSizePx
-
-        // 2. Definir la forma del "agujero" (Rectángulo con esquinas redondeadas)
-        val roundedRectPath = androidx.compose.ui.graphics.Path().apply {
+        val holePath = androidx.compose.ui.graphics.Path().apply {
             addRoundRect(
                 androidx.compose.ui.geometry.RoundRect(
                     rect = androidx.compose.ui.geometry.Rect(
                         offset = androidx.compose.ui.geometry.Offset(left, top),
-                        size = androidx.compose.ui.geometry.Size(scanSizePx, scanSizePx)
+                        size   = androidx.compose.ui.geometry.Size(scanSizePx, scanSizePx)
                     ),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerRadiusPx, cornerRadiusPx)
                 )
             )
         }
 
-        // 3. DIBUJAR EL FONDO OPACO CON EL AGUJERO
-        clipPath(roundedRectPath, clipOp = androidx.compose.ui.graphics.ClipOp.Difference) {
+        clipPath(holePath, clipOp = androidx.compose.ui.graphics.ClipOp.Difference) {
             drawRect(color = overlayColor)
         }
 
-        // 4. PREPARAR EL ESTILO DE LAS ESQUINAS EN "L"
         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
             width = cornerStrokeWidth.toPx(),
-            cap = androidx.compose.ui.graphics.StrokeCap.Round,
-            join = androidx.compose.ui.graphics.StrokeJoin.Round
+            cap   = androidx.compose.ui.graphics.StrokeCap.Round,
+            join  = androidx.compose.ui.graphics.StrokeJoin.Round
         )
         val lengthPx = cornerLength.toPx()
-        // Ajuste fino para que la línea quede justo en el borde del agujero
-        val offset = cornerStrokeWidth.toPx() / 2
-
-        // 5. DIBUJAR LAS 4 ESQUINAS EN "L" (Acompañando la curva del agujero)
+        val o = cornerStrokeWidth.toPx() / 2
 
         // Esquina Superior Izquierda
         drawPath(
             path = androidx.compose.ui.graphics.Path().apply {
-                moveTo(left - offset, top + lengthPx) // Empieza abajo
-                lineTo(left - offset, top + cornerRadiusPx) // Recta hasta inicio curva
-                // Curva
-                quadraticBezierTo(left - offset, top - offset, left + cornerRadiusPx, top - offset)
-                lineTo(left + lengthPx, top - offset) // Recta hacia la derecha
+                moveTo(left - o, top + lengthPx)
+                lineTo(left - o, top + cornerRadiusPx)
+                quadraticBezierTo(left - o, top - o, left + cornerRadiusPx, top - o)
+                lineTo(left + lengthPx, top - o)
             },
-            color = cornerColor,
-            style = stroke
+            color = cornerColor, style = stroke
         )
-
         // Esquina Superior Derecha
         drawPath(
             path = androidx.compose.ui.graphics.Path().apply {
-                moveTo(right - lengthPx, top - offset) // Empieza izquierda
-                lineTo(right - cornerRadiusPx, top - offset) // Recta hasta inicio curva
-                // Curva
-                quadraticBezierTo(right + offset, top - offset, right + offset, top + cornerRadiusPx)
-                lineTo(right + offset, top + lengthPx) // Recta hacia abajo
+                moveTo(right - lengthPx, top - o)
+                lineTo(right - cornerRadiusPx, top - o)
+                quadraticBezierTo(right + o, top - o, right + o, top + cornerRadiusPx)
+                lineTo(right + o, top + lengthPx)
             },
-            color = cornerColor,
-            style = stroke
+            color = cornerColor, style = stroke
         )
-
         // Esquina Inferior Izquierda
         drawPath(
             path = androidx.compose.ui.graphics.Path().apply {
-                moveTo(left - offset, bottom - lengthPx) // Empieza arriba
-                lineTo(left - offset, bottom - cornerRadiusPx) // Recta hasta inicio curva
-                // Curva
-                quadraticBezierTo(left - offset, bottom + offset, left + cornerRadiusPx, bottom + offset)
-                lineTo(left + lengthPx, bottom + offset) // Recta hacia la derecha
+                moveTo(left - o, bottom - lengthPx)
+                lineTo(left - o, bottom - cornerRadiusPx)
+                quadraticBezierTo(left - o, bottom + o, left + cornerRadiusPx, bottom + o)
+                lineTo(left + lengthPx, bottom + o)
             },
-            color = cornerColor,
-            style = stroke
+            color = cornerColor, style = stroke
         )
-
         // Esquina Inferior Derecha
         drawPath(
             path = androidx.compose.ui.graphics.Path().apply {
-                moveTo(right - lengthPx, bottom + offset) // Empieza izquierda
-                lineTo(right - cornerRadiusPx, bottom + offset) // Recta hasta inicio curva
-                // Curva
-                quadraticBezierTo(right + offset, bottom + offset, right + offset, bottom - cornerRadiusPx)
-                lineTo(right + offset, bottom - lengthPx) // Recta hacia arriba
+                moveTo(right - lengthPx, bottom + o)
+                lineTo(right - cornerRadiusPx, bottom + o)
+                quadraticBezierTo(right + o, bottom + o, right + o, bottom - cornerRadiusPx)
+                lineTo(right + o, bottom - lengthPx)
             },
-            color = cornerColor,
-            style = stroke
+            color = cornerColor, style = stroke
         )
     }
 }
