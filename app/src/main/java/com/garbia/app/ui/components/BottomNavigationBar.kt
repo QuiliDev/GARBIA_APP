@@ -71,15 +71,15 @@ fun BottomNavigationBar(navController: NavController) {
         // 1. LA BARRA BLANCA
         Surface(
             shape = navShape,
-            color = Color.White,
-            // 🎨 MAGIA DE LA SOMBRA: Usamos modifier.shadow en lugar de shadowElevation
+            color = MaterialTheme.colorScheme.surface,
+            // MAGIA DE LA SOMBRA: Usamos modifier.shadow en lugar de shadowElevation
             modifier = Modifier
                 .fillMaxWidth()
                 .height(barHeight)
                 .shadow(
-                    elevation = 20.dp,        // Hacemos la sombra más grande
+                    elevation = 30.dp,        // la sombra
                     shape = navShape,
-                    ambientColor = Color.Black, // Forzamos a que la sombra ambiental se vea oscura
+                    ambientColor = Color.Black, // sombra ambiental oscura
                     spotColor = Color.Black,    // Sombra principal fuerte
                     clip = false
                 )
@@ -89,7 +89,7 @@ fun BottomNavigationBar(navController: NavController) {
                 tonalElevation = 0.dp,
                 contentPadding = PaddingValues(horizontal = 24.dp)
             ) {
-                // ICONO HOME (Con navegación restaurada)
+                // ICONO HOME
                 IconButton(
                     onClick = {
                         if (currentRoute != Screen.Home.route) {
@@ -148,7 +148,7 @@ fun BottomNavigationBar(navController: NavController) {
 // --- CLASE DEFINITIVA: RECORTE CON "FILLETS" (Esquinas interiores y exteriores redondeadas) ---
 class FilletedCircleCutoutShape(
     private val cutoutRadius: Dp,       // Radio del hueco para el botón
-    private val filletRadius: Dp = 16.dp, // NUEVO: Radio de las esquinas interiores (junto al botón)
+    private val filletRadius: Dp = 16.dp, // Radio de las esquinas interiores (junto al botón)
     private val cornerRadius: Dp = 16.dp  // Radio de las esquinas exteriores (laterales del móvil)
 ) : Shape {
     override fun createOutline(
@@ -164,7 +164,7 @@ class FilletedCircleCutoutShape(
         val barHeight = size.height
         val cX = barWidth / 2f
 
-        // Magia matemática: Calcula exactamente dónde deben tocarse los círculos
+        // Calcula exactamente dónde deben tocarse los círculos
         val dx = kotlin.math.sqrt(r * r + 2 * r * f)
         val theta = Math.toDegrees(kotlin.math.atan2(f.toDouble(), dx.toDouble())).toFloat()
 
