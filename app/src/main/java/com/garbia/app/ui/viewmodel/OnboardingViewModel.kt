@@ -18,6 +18,9 @@ class OnboardingViewModel @Inject constructor(
     val hasSeenOnboarding: StateFlow<Boolean?> = appPreferences.hasSeenOnboarding
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    val hasSetupNombre: StateFlow<Boolean?> = appPreferences.hasSetupNombre
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     fun finishOnboarding() {
         viewModelScope.launch { appPreferences.setHasSeenOnboarding(true) }
     }

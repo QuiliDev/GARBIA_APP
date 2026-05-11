@@ -6,9 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideIntoContainer
-import androidx.compose.animation.slideOutOfContainer
-import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -74,6 +73,7 @@ fun GarbiaAppMain(
     onboardingViewModel: OnboardingViewModel = hiltViewModel()
 ) {
     val hasSeenOnboarding by onboardingViewModel.hasSeenOnboarding.collectAsStateWithLifecycle()
+    val hasSetupNombre    by onboardingViewModel.hasSetupNombre.collectAsStateWithLifecycle()
     var currentTheme by remember { mutableStateOf(AppThemeColor.GREEN) }
 
     GarbiaAppTheme(themeColor = currentTheme) {
@@ -81,12 +81,16 @@ fun GarbiaAppMain(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            // Espera a que DataStore cargue antes de navegar
-            if (hasSeenOnboarding == null) return@Surface
+            // Espera a que DataStore cargue
+            if (hasSeenOnboarding == null || hasSetupNombre == null) return@Surface
 
-            val startRoute = if (hasSeenOnboarding == true) Screen.Home.route else Screen.Onboarding.route
+            val startRoute = when {
+                !hasSeenOnboarding!! -> Screen.Onboarding.route
+                !hasSetupNombre!!    -> Screen.SetupNombre.route
+                else                 -> Screen.Home.route
+            }
             MainScreen(
-                startRoute = startRoute,
+                startRoute   = startRoute,
                 currentTheme = currentTheme,
                 onThemeChanged = { currentTheme = it }
             )
@@ -166,26 +170,19 @@ fun GarbiaNav(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier,
-        enterTransition = {
-            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) +
-                    fadeIn(tween(300))
-        },
-        exitTransition = {
-            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) +
-                    fadeOut(tween(300))
-        },
-        popEnterTransition = {
-            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) +
-                    fadeIn(tween(300))
-        },
-        popExitTransition = {
-            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) +
-                    fadeOut(tween(300))
-        }
+        enterTransition   = { slideInHorizontally(tween(300))  { it } + fadeIn(tween(300)) },
+        exitTransition    = { slideOutHorizontally(tween(300)) { -it } + fadeOut(tween(300)) },
+        popEnterTransition  = { slideInHorizontally(tween(300))  { -it } + fadeIn(tween(300)) },
+        popExitTransition   = { slideOutHorizontally(tween(300)) { it } + fadeOut(tween(300)) }
     ) {
         // ONBOARDING
         composable(Screen.Onboarding.route) {
             OnboardingScreen(navController)
+        }
+
+        // SETUP NOMBRE
+        composable(Screen.SetupNombre.route) {
+            SetupNombreScreen(navController)
         }
 
         // 1. HOME SCREEN

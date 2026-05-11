@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -16,6 +17,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.garbia.app.ui.viewmodel.DiaEstadistica
 import com.garbia.app.ui.viewmodel.EstadisticasViewModel
+import com.garbia.app.ui.viewmodel.TendenciaMaterial
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +35,8 @@ fun EstadisticasScreen(
     navController: NavController,
     viewModel: EstadisticasViewModel = hiltViewModel()
 ) {
-    val datos by viewModel.datos.collectAsStateWithLifecycle()
+    val datos      by viewModel.datos.collectAsStateWithLifecycle()
+    val tendencias by viewModel.tendencias.collectAsStateWithLifecycle()
     val totalEscaneos = datos.sumOf { it.escaneos }
     val totalPuntos   = datos.sumOf { it.puntos }
 
@@ -127,6 +131,28 @@ fun EstadisticasScreen(
                             .padding(16.dp)
                     )
                 }
+
+                if (tendencias.isNotEmpty()) {
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        "Tendencia por tipo de residuo",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize   = 15.sp,
+                        modifier   = Modifier.padding(bottom = 8.dp)
+                    )
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape    = RoundedCornerShape(16.dp)
+                    ) {
+                        LineChart(
+                            tendencias = tendencias,
+                            etiquetas  = datos.map { it.etiqueta },
+                            modifier   = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        )
+                    }
+                }
             } else {
                 Box(
                     modifier = Modifier
@@ -215,6 +241,110 @@ private fun BarChart(
                     textAlign = TextAlign.Center,
                     color     = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LineChart(
+    tendencias: List<TendenciaMaterial>,
+    etiquetas: List<String>,
+    modifier: Modifier = Modifier
+) {
+    val maxVal = tendencias.flatMap { it.valoresPorDia }
+        .maxOrNull()?.coerceAtLeast(1f) ?: 1f
+
+    Column(modifier = modifier) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+        ) {
+            val w = size.width
+            val h = size.height
+            val n = etiquetas.size.coerceAtLeast(2)
+            val xStep = w / (n - 1).toFloat()
+
+            // Líneas de guía horizontales
+            repeat(5) { i ->
+                val y = h * i / 4f
+                drawLine(
+                    color       = Color.Gray.copy(alpha = 0.15f),
+                    start       = Offset(0f, y),
+                    end         = Offset(w, y),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+
+            // Línea + puntos por tipo de material
+            tendencias.forEach { t ->
+                val color  = Color(t.colorHex)
+                val points = t.valoresPorDia.mapIndexed { i, v ->
+                    Offset(i * xStep, h * (1f - v / maxVal))
+                }
+                for (i in 0 until points.lastIndex) {
+                    drawLine(
+                        color       = color,
+                        start       = points[i],
+                        end         = points[i + 1],
+                        strokeWidth = 2.5.dp.toPx(),
+                        cap         = StrokeCap.Round
+                    )
+                }
+                points.forEach { p ->
+                    drawCircle(Color.White, 5.dp.toPx(), p)
+                    drawCircle(color, 3.5.dp.toPx(), p)
+                }
+            }
+        }
+
+        // Etiquetas del eje X
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            etiquetas.forEach { label ->
+                Text(
+                    label,
+                    fontSize  = 10.sp,
+                    color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier  = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // Leyenda de colores
+        Spacer(Modifier.height(12.dp))
+        tendencias.chunked(2).forEach { fila ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                fila.forEach { t ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier          = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            Modifier
+                                .size(10.dp)
+                                .background(Color(t.colorHex), CircleShape)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            t.material,
+                            fontSize = 11.sp,
+                            color    = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+                if (fila.size == 1) Spacer(Modifier.weight(1f))
             }
         }
     }

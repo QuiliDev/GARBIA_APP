@@ -35,7 +35,9 @@ fun ProfileScreen(
     val usuario      by viewModel.usuario.collectAsStateWithLifecycle()
     val estadoAuth   by authViewModel.estado.collectAsStateWithLifecycle()
     val scrollState  = rememberScrollState()
-    var showThemeDialog by remember { mutableStateOf(false) }
+    var showThemeDialog      by remember { mutableStateOf(false) }
+    var showAyudaDialog      by remember { mutableStateOf(false) }
+    var showPrivacidadDialog by remember { mutableStateOf(false) }
 
     if (showThemeDialog) {
         ThemeSelectionDialog(
@@ -44,6 +46,42 @@ fun ProfileScreen(
             onThemeSelected = { newTheme ->
                 onThemeChanged(newTheme)
                 showThemeDialog = false
+            }
+        )
+    }
+
+    if (showAyudaDialog) {
+        AlertDialog(
+            onDismissRequest = { showAyudaDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showAyudaDialog = false }) { Text("Entendido") }
+            },
+            title = { Text("Preguntas frecuentes", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("¿Cómo funciona el escáner?\nApunta la cámara a un residuo y Garbia lo clasifica con IA.", fontSize = 14.sp)
+                    Text("¿Qué son los puntos?\nCada escaneo exitoso suma puntos según el tipo de residuo.", fontSize = 14.sp)
+                    Text("¿Cómo mejoro mi nivel?\nAcumula puntos escaneando residuos a diario.", fontSize = 14.sp)
+                    Text("¿Mis datos se sincronizan?\nSí, si tienes conexión tus datos se guardan en la nube.", fontSize = 14.sp)
+                }
+            }
+        )
+    }
+
+    if (showPrivacidadDialog) {
+        AlertDialog(
+            onDismissRequest = { showPrivacidadDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showPrivacidadDialog = false }) { Text("Cerrar") }
+            },
+            title = { Text("Política de privacidad", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Garbia recopila únicamente los datos necesarios para ofrecerte la experiencia de reciclaje.", fontSize = 14.sp)
+                    Text("• Fotos: procesadas para identificar el residuo, no se almacenan en servidores.", fontSize = 14.sp)
+                    Text("• Puntos e historial: guardados en tu dispositivo y sincronizados de forma anónima.", fontSize = 14.sp)
+                    Text("• No compartimos datos con terceros ni los vendemos.", fontSize = 14.sp)
+                }
             }
         )
     }
@@ -164,7 +202,7 @@ fun ProfileScreen(
                             ProfileOptionItem(
                                 icon      = Icons.Outlined.CloudOff,
                                 title     = "Modo local",
-                                subtitle  = "Sin sincronización Firebase",
+                                subtitle  = "Datos guardados solo en este dispositivo",
                                 iconColor = Color(0xFF9E9E9E),
                                 onClick   = {}
                             )
@@ -179,15 +217,15 @@ fun ProfileScreen(
                         title     = "Ayuda",
                         subtitle  = "Preguntas frecuentes",
                         iconColor = Color(0xFF2196F3),
-                        onClick   = { }
+                        onClick   = { showAyudaDialog = true }
                     )
                     Divider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     ProfileOptionItem(
                         icon      = Icons.Outlined.PrivacyTip,
                         title     = "Privacidad",
-                        subtitle  = null,
+                        subtitle  = "Política de privacidad",
                         iconColor = Color(0xFF4CAF50),
-                        onClick   = { }
+                        onClick   = { showPrivacidadDialog = true }
                     )
                 }
 
@@ -195,7 +233,7 @@ fun ProfileScreen(
 
                 Box(modifier = Modifier.padding(horizontal = 24.dp)) {
                     Button(
-                        onClick = { /* Logout logic */ },
+                        onClick = { authViewModel.cerrarSesion() },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor   = MaterialTheme.colorScheme.error
