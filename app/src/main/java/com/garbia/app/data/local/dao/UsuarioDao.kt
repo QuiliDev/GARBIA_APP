@@ -24,4 +24,7 @@ interface UsuarioDao {
 
     @Query("UPDATE usuario SET puntosTotales = puntosTotales + :puntos, escaneosTotales = escaneosTotales + 1, co2Ahorrado = co2Ahorrado + :co2 WHERE id = 1")
     suspend fun sumarPuntos(puntos: Int, co2: Float)
+
+    @Query("UPDATE usuario SET nombre = :nombre WHERE id = 1")
+    suspend fun actualizarNombre(nombre: String)
 }

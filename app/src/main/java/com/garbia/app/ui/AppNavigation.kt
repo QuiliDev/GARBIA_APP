@@ -15,4 +15,6 @@ sealed class Screen(val route: String) {
     object Onboarding : Screen("onboarding_screen")
     object Logros       : Screen("logros_screen")
     object Estadisticas : Screen("estadisticas_screen")
+    object Historial    : Screen("historial_screen")
+    object EditProfile  : Screen("edit_profile_screen")
 }
