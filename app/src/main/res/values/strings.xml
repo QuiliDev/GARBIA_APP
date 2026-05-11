@@ -1,3 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">GarbiaApp</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_p1_emoji">🤳</string>
+    <string name="onboarding_p1_title">Escanea y Aprende</string>
+    <string name="onboarding_p1_desc">Apunta la cámara a cualquier residuo. Nuestra IA te dice exactamente en qué contenedor va y por qué.</string>
+    <string name="onboarding_p2_emoji">🏆</string>
+    <string name="onboarding_p2_title">Gana Puntos y Sube de Nivel</string>
+    <string name="onboarding_p2_desc">Cada escaneo correcto suma puntos, subes de nivel y desbloqueas logros. ¡El reciclaje nunca había sido tan adictivo!</string>
+    <string name="onboarding_p3_emoji">🌍</string>
+    <string name="onboarding_p3_title">Cuida el Planeta</string>
+    <string name="onboarding_p3_desc">Cada objeto reciclado reduce el CO₂. Compite en el ranking global y haz del reciclaje un hábito diario.</string>
+    <string name="onboarding_btn_skip">Saltar</string>
+    <string name="onboarding_btn_next">Siguiente</string>
+    <string name="onboarding_btn_start">¡Empezar a Reciclar!</string>
+
+    <!-- Cámara -->
+    <string name="camera_instruction">Encuadra el residuo y dispara</string>
+    <string name="camera_permission_rationale">Necesitamos acceso a la cámara para escanear residuos.</string>
+    <string name="camera_permission_denied">Permiso de cámara denegado. Ve a Ajustes para habilitarlo.</string>
+    <string name="camera_no_hardware">Este dispositivo no tiene cámara trasera disponible.</string>
+    <string name="camera_error_capture">Error al hacer la foto. Inténtalo de nuevo.</string>
+    <string name="camera_error_init">No se pudo inicializar la cámara.</string>
+    <string name="camera_btn_grant">Conceder Permiso</string>
+    <string name="camera_btn_settings">Abrir Ajustes</string>
+    <string name="camera_btn_retry">Reintentar</string>
+    <string name="camera_content_desc_close">Cerrar</string>
+    <string name="camera_content_desc_gallery">Galería</string>
+    <string name="camera_content_desc_flash">Flash</string>
+
+    <!-- Navegación y acciones comunes -->
+    <string name="btn_back">Volver</string>
+    <string name="btn_share">Compartir</string>
+    <string name="btn_confirm">Confirmar</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="btn_save">Guardar cambios</string>
+    <string name="btn_continue">Continuar</string>
+    <string name="loading">Cargando…</string>
+    <string name="no_results">Sin resultados</string>
+
+    <!-- Home -->
+    <string name="home_guia_title">Guía de Reciclaje</string>
+    <string name="home_guia_subtitle">¿Dónde va cada residuo?</string>
+    <string name="home_racha_record">Récord: %1$d días · ¡Sigue así!</string>
+    <string name="home_racha_dias_singular">día consecutivo</string>
+    <string name="home_racha_dias_plural">días consecutivos</string>
+
+    <!-- Historial -->
+    <string name="historial_empty_scan">Aún no has escaneado nada.\n¡Empieza a reciclar!</string>
+    <string name="historial_filter_all">Todos</string>
+
+    <!-- Logros -->
+    <string name="logros_title">Mis Logros</string>
+    <string name="logros_progress">%1$d / %2$d logros desbloqueados</string>
+    <string name="logros_share_text">¡Llevo %1$d/%2$d logros en GarbiaApp! 🏆 #Garbia #Reciclaje</string>
+
+    <!-- Estadísticas -->
+    <string name="estadisticas_title">Estadísticas</string>
+    <string name="estadisticas_periodo">Últimos 7 días</string>
+    <string name="estadisticas_escaneos">Escaneos</string>
+    <string name="estadisticas_puntos">Puntos</string>
+    <string name="estadisticas_empty">Aún no hay datos.\n¡Escanea tu primer residuo!</string>
+
+    <!-- Perfil -->
+    <string name="profile_edit_title">Editar perfil</string>
+    <string name="profile_name_label">Nombre de usuario</string>
+    <string name="profile_account_synced">Sincronizado con Firebase</string>
+    <string name="profile_account_local">Modo local</string>
+    <string name="profile_account_local_subtitle">Sin sincronización Firebase</string>
+
+    <!-- Guía reciclaje -->
+    <string name="guia_title">Guía de Reciclaje</string>
+    <string name="guia_search_placeholder">Buscar material…</string>
+    <string name="guia_no_results">Sin resultados para \"%1$s\"</string>
+
+    <!-- Resultado escaneo -->
+    <string name="result_share_text">¡Acabo de reciclar %1$s correctamente con GarbiaApp! +%2$d puntos y %3$.2f kg de CO₂ ahorrado ♻️ #Garbia #Reciclaje</string>
+    <string name="result_share_title">Compartir logro</string>
+    <string name="result_btn_share">Compartir logro</string>
+
+    <!-- Notificaciones -->
+    <string name="notif_channel_name">Recordatorio diario</string>
+    <string name="notif_channel_desc">Recuérdame reciclar cada día</string>
+    <string name="notif_title">¡Recuerda reciclar hoy! ♻️</string>
+    <string name="notif_body">Escanea un residuo y mantén tu racha activa.</string>
+
+    <!-- Errores generales -->
+    <string name="error_generic">Algo salió mal. Inténtalo de nuevo.</string>
+    <string name="error_no_connection">Sin conexión a internet.</string>
 </resources>

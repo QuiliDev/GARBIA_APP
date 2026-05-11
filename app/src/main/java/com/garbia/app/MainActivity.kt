@@ -36,6 +36,7 @@ import com.garbia.app.ui.theme.AppThemeColor
 import com.garbia.app.ui.theme.GarbiaAppTheme
 import com.garbia.app.data.worker.RecordatorioWorker
 import com.garbia.app.ui.viewmodel.OnboardingViewModel
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import java.net.URLDecoder
 import java.util.concurrent.TimeUnit
@@ -46,6 +47,7 @@ import androidx.work.WorkManager
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         programarRecordatorioDiario()
         setContent {
