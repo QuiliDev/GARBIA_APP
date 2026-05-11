@@ -3,6 +3,12 @@ package com.garbia.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIntoContainer
+import androidx.compose.animation.slideOutOfContainer
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,6 +34,7 @@ import com.garbia.app.ui.components.GarbiaTopBar
 import com.garbia.app.ui.screens.*
 import com.garbia.app.ui.theme.AppThemeColor
 import com.garbia.app.ui.theme.GarbiaAppTheme
+import com.garbia.app.ui.viewmodel.OnboardingViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.net.URLDecoder
 
@@ -34,18 +43,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // Punto de entrada limpio
             GarbiaAppMain()
         }
     }
 }
 
 // -----------------------------------------------------------------------------
-// 1. GARBIA APP: Maneja el Tema y el contenedor principal (Surface)
+// 1. GARBIA APP: Maneja el Tema, el Onboarding y el contenedor principal
 // -----------------------------------------------------------------------------
 @Composable
-fun GarbiaAppMain() {
-    // Estado del tema elevado al nivel más alto
+fun GarbiaAppMain(
+    onboardingViewModel: OnboardingViewModel = hiltViewModel()
+) {
+    val hasSeenOnboarding by onboardingViewModel.hasSeenOnboarding.collectAsStateWithLifecycle()
     var currentTheme by remember { mutableStateOf(AppThemeColor.GREEN) }
 
     GarbiaAppTheme(themeColor = currentTheme) {
@@ -53,9 +63,14 @@ fun GarbiaAppMain() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
+            // Espera a que DataStore cargue antes de navegar
+            if (hasSeenOnboarding == null) return@Surface
+
+            val startRoute = if (hasSeenOnboarding == true) Screen.Home.route else Screen.Onboarding.route
             MainScreen(
+                startRoute = startRoute,
                 currentTheme = currentTheme,
-                onThemeChanged = { newTheme -> currentTheme = newTheme }
+                onThemeChanged = { currentTheme = it }
             )
         }
     }
@@ -66,6 +81,7 @@ fun GarbiaAppMain() {
 // -----------------------------------------------------------------------------
 @Composable
 fun MainScreen(
+    startRoute: String,
     currentTheme: AppThemeColor,
     onThemeChanged: (AppThemeColor) -> Unit
 ) {
@@ -73,17 +89,15 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // --- LÓGICA DE VISIBILIDAD DE BARRAS ---
-
-    // TopBar: Solo visible en pantallas de resultado (Home tiene la suya propia)
     val showTopBar = currentRoute?.startsWith("result_screen") == true
-
-    // BottomBar: Visible en Home, Perfil y Resultado
     val showBottomNav = currentRoute == Screen.Home.route ||
             currentRoute == Screen.Profile.route ||
+            currentRoute == Screen.Ranking.route ||
+            currentRoute == Screen.Premios.route ||
+            currentRoute == Screen.Tips.route ||
+            currentRoute == Screen.Mapas.route ||
             currentRoute?.startsWith("result_screen") == true
 
-    // Tema Oscuro: Para ajustar colores de la TopBar si es necesario
     val isDarkTheme = currentTheme == AppThemeColor.ORANGE_DARK
 
     Scaffold(
@@ -102,14 +116,16 @@ fun MainScreen(
         }
     ) { innerPadding ->
 
-        // --- LÓGICA DE PADDING TRANSPARENTE ---
-        // Si es HOME, anulamos el padding (0.dp) para que el contenido se dibuje detrás de las barras.
-        // En el resto de pantallas, respetamos el padding del sistema.
-        val topPadding = if (currentRoute == Screen.Home.route || currentRoute == Screen.Home.route) 0.dp else innerPadding.calculateTopPadding()
-        val bottomPadding = if (currentRoute == Screen.Home.route) 0.dp else innerPadding.calculateBottomPadding()
+        val topPadding = if (currentRoute == Screen.Camera.route) 0.dp else innerPadding.calculateTopPadding()
+        val bottomPadding = when {
+            currentRoute?.startsWith("result_screen") == true -> innerPadding.calculateBottomPadding()
+            showBottomNav -> 0.dp
+            else -> innerPadding.calculateBottomPadding()
+        }
 
         GarbiaNav(
             navController = navController,
+            startDestination = startRoute,
             modifier = Modifier.padding(top = topPadding, bottom = bottomPadding),
             currentTheme = currentTheme,
             onThemeChanged = onThemeChanged
@@ -123,32 +139,77 @@ fun MainScreen(
 @Composable
 fun GarbiaNav(
     navController: NavHostController,
+    startDestination: String,
     modifier: Modifier = Modifier,
     currentTheme: AppThemeColor,
     onThemeChanged: (AppThemeColor) -> Unit
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
-        modifier = modifier
+        startDestination = startDestination,
+        modifier = modifier,
+        enterTransition = {
+            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) +
+                    fadeIn(tween(300))
+        },
+        exitTransition = {
+            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) +
+                    fadeOut(tween(300))
+        },
+        popEnterTransition = {
+            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) +
+                    fadeIn(tween(300))
+        },
+        popExitTransition = {
+            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) +
+                    fadeOut(tween(300))
+        }
     ) {
+        // ONBOARDING
+        composable(Screen.Onboarding.route) {
+            OnboardingScreen(navController)
+        }
+
         // 1. HOME SCREEN
         composable(Screen.Home.route) {
             HomeScreen(navController)
         }
 
-        // 2. PROFILE SCREEN (Necesita callbacks del tema)
+        // 2. PROFILE SCREEN
         composable(Screen.Profile.route) {
             ProfileScreen(
-                currentTheme = currentTheme,
+                navController  = navController,
+                currentTheme   = currentTheme,
                 onThemeChanged = onThemeChanged
             )
+        }
+
+        // LOGROS
+        composable(Screen.Logros.route) {
+            LogrosScreen(navController)
+        }
+
+        // ESTADÍSTICAS
+        composable(Screen.Estadisticas.route) {
+            EstadisticasScreen(navController)
         }
 
         // 3. CÁMARA
         composable(Screen.Camera.route) {
             CameraScreen(navController)
         }
+
+        // 7. RANKING
+        composable(Screen.Ranking.route) { RankingScreen(navController) }
+
+        // 8. PREMIOS
+        composable(Screen.Premios.route) { PremiosScreen(navController) }
+
+        // 9. TIPS
+        composable(Screen.Tips.route) { TipsScreen(navController) }
+
+        // 10. MAPAS
+        composable(Screen.Mapas.route) { MapasScreen(navController) }
 
         // 4. PREVISUALIZACIÓN DE FOTO
         composable("preview_screen/{photoUri}") { backStackEntry ->

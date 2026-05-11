@@ -15,12 +15,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import com.garbia.app.ui.Screen
 import com.garbia.app.ui.components.*
 import com.garbia.app.ui.theme.AppThemeColor
 import com.garbia.app.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
+    navController: NavController,
     currentTheme: AppThemeColor,
     onThemeChanged: (AppThemeColor) -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
@@ -72,6 +75,14 @@ fun ProfileScreen(
                 SectionTitle("General")
                 ProfileMenuCard {
                     ProfileOptionItem(
+                        icon      = Icons.Outlined.EmojiEvents,
+                        title     = "Mis Logros",
+                        subtitle  = "Badges y recompensas",
+                        iconColor = Color(0xFFFFC107),
+                        onClick   = { navController.navigate(Screen.Logros.route) }
+                    )
+                    Divider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    ProfileOptionItem(
                         icon      = Icons.Outlined.Palette,
                         title     = "Apariencia",
                         subtitle  = "Cambiar tema de color",
@@ -85,6 +96,17 @@ fun ProfileScreen(
                         subtitle  = "Gestor de alertas",
                         iconColor = Color(0xFFFF9800),
                         onClick   = { }
+                    )
+                }
+
+                SectionTitle("Progreso")
+                ProfileMenuCard {
+                    ProfileOptionItem(
+                        icon      = Icons.Outlined.BarChart,
+                        title     = "Estadísticas",
+                        subtitle  = "Actividad de los últimos 7 días",
+                        iconColor = Color(0xFF3F51B5),
+                        onClick   = { navController.navigate(Screen.Estadisticas.route) }
                     )
                 }
 
