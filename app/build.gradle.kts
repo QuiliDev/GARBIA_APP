@@ -70,9 +70,10 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$camerax_version")
     implementation("androidx.camera:camera-view:$camerax_version")
 
-    // Firebase (requiere google-services.json + plugin para activarse; FirestoreService tiene fallback)
+    // Firebase (requiere google-services.json + plugin para activarse; servicios tienen try/catch fallback)
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
 
     // DataStore (Preferencias persistentes)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
