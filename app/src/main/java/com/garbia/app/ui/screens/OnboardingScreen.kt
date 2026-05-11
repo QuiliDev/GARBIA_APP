@@ -71,7 +71,7 @@ fun OnboardingScreen(
 
     fun done() {
         viewModel.finishOnboarding()
-        navController.navigate(Screen.Home.route) {
+        navController.navigate(Screen.SetupNombre.route) {
             popUpTo(Screen.Onboarding.route) { inclusive = true }
         }
     }

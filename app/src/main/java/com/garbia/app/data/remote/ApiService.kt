@@ -36,7 +36,7 @@ private const val KEY_RESULTADO = "ultimo_resultado"
 class ApiService @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val endpointUrl: String = ""
+    private val endpointUrl: String = "https://garbiaappbackend-production.up.railway.app/clasificar"
 
     private val client = HttpClient(Android) {
         install(HttpTimeout) {

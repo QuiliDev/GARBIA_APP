@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,8 +32,16 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         context.appDataStore.edit { it[Keys.HAS_SCHEDULED_REMINDER] = value }
     }
 
+    val hasSetupNombre: Flow<Boolean> = context.appDataStore.data
+        .map { prefs -> prefs[Keys.HAS_SETUP_NOMBRE] ?: false }
+
+    suspend fun setHasSetupNombre(value: Boolean) {
+        context.appDataStore.edit { it[Keys.HAS_SETUP_NOMBRE] = value }
+    }
+
     private object Keys {
         val HAS_SEEN_ONBOARDING    = booleanPreferencesKey("has_seen_onboarding")
         val HAS_SCHEDULED_REMINDER = booleanPreferencesKey("has_scheduled_reminder")
+        val HAS_SETUP_NOMBRE       = booleanPreferencesKey("has_setup_nombre")
     }
 }
