@@ -59,8 +59,38 @@ fun PremiosScreen(
     navController: NavController,
     viewModel: PremiosViewModel = hiltViewModel()
 ) {
-    val userPoints by viewModel.puntos.collectAsStateWithLifecycle()
+    val userPoints     by viewModel.puntos.collectAsStateWithLifecycle()
+    val canjesRealizados by viewModel.canjesRealizados.collectAsStateWithLifecycle()
     var selectedCategory by remember { mutableStateOf("Todos") }
+    var premioAConfirmar by remember { mutableStateOf<Premio?>(null) }
+
+    // Diálogo de confirmación de canje
+    premioAConfirmar?.let { premio ->
+        AlertDialog(
+            onDismissRequest = { premioAConfirmar = null },
+            icon  = { Icon(premio.icon, null, tint = premio.color) },
+            title = { Text("Canjear ${premio.title}", fontWeight = FontWeight.Bold) },
+            text  = {
+                Text(
+                    "Se descontarán ${premio.pointsCost} pts de tu saldo.\n" +
+                    "Te quedarán ${userPoints - premio.pointsCost} pts.\n\n" +
+                    "¿Confirmas el canje?"
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.canjearPremio(premio.pointsCost)
+                        premioAConfirmar = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = premio.color)
+                ) { Text("Confirmar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { premioAConfirmar = null }) { Text("Cancelar") }
+            }
+        )
+    }
 
     val filtered = when (selectedCategory) {
         "Disponibles" -> premiosData.filter { userPoints >= it.pointsCost }
@@ -126,7 +156,7 @@ fun PremiosScreen(
                                 Spacer(Modifier.weight(1f))
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text("Canjeados", color = Color.White.copy(.7f), fontSize = 11.sp)
-                                    Text("3 premios", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text("$canjesRealizados premios", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 }
                             }
                         }
@@ -167,7 +197,12 @@ fun PremiosScreen(
 
             // ── TARJETAS DE PREMIOS ───────────────────────────────────
             items(filtered) { prize ->
-                PrizeCard(prize = prize, userPoints = userPoints, accentColor = purple)
+                PrizeCard(
+                    prize       = prize,
+                    userPoints  = userPoints,
+                    accentColor = purple,
+                    onCanjear   = { premioAConfirmar = prize }
+                )
                 Spacer(Modifier.height(12.dp))
             }
 
@@ -178,7 +213,7 @@ fun PremiosScreen(
 
 // --- TARJETA PREMIO ---
 @Composable
-private fun PrizeCard(prize: Premio, userPoints: Int, accentColor: Color) {
+private fun PrizeCard(prize: Premio, userPoints: Int, accentColor: Color, onCanjear: () -> Unit = {}) {
     val canRedeem = userPoints >= prize.pointsCost
     val remaining = prize.pointsCost - userPoints
 
@@ -266,7 +301,7 @@ private fun PrizeCard(prize: Premio, userPoints: Int, accentColor: Color) {
                 }
                 // Botón
                 Button(
-                    onClick = {},
+                    onClick = { if (canRedeem) onCanjear() },
                     enabled = canRedeem,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = prize.color,

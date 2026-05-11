@@ -1,5 +1,6 @@
 package com.garbia.app.ui.screens
 
+import android.content.Intent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,8 +37,9 @@ fun LogrosScreen(
     navController: NavController,
     viewModel: LogrosViewModel = hiltViewModel()
 ) {
-    val logros by viewModel.logros.collectAsStateWithLifecycle()
+    val logros        by viewModel.logros.collectAsStateWithLifecycle()
     val desbloqueados = logros.count { it.desbloqueado }
+    val context       = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -44,6 +48,19 @@ fun LogrosScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Outlined.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        val logrosNombres = logros.filter { it.desbloqueado }.joinToString(" · ") { "${it.emoji} ${it.nombre}" }
+                        val texto = "¡Llevo $desbloqueados/${logros.size} logros en GarbiaApp! 🏆\n$logrosNombres\n#Garbia #Reciclaje"
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, texto)
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Compartir logros"))
+                    }) {
+                        Icon(Icons.Outlined.Share, contentDescription = "Compartir")
                     }
                 }
             )
