@@ -1,8 +1,12 @@
 package com.garbia.app.data.remote
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.util.Base64
 import com.garbia.app.data.model.ResultadoEscaneo
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.HttpTimeout
@@ -17,9 +21,6 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// --- DTOs simples (sin @Serializable — usamos org.json para parsear) ---
-private data class ClasificacionRequest(val image_base64: String, val source: String = "garbia-app")
-
 private val MOCK_RESULTADOS = listOf(
     ResultadoEscaneo(true,  "Vidrio",   "Contenedor Verde",    "Botellas, frascos y tarros. Recuerda quitar las tapas.",           15, 0.5f),
     ResultadoEscaneo(true,  "Plástico", "Contenedor Amarillo", "Botellas de plástico, latas y bricks. Aplástalos si puedes.",      10, 0.3f),
@@ -28,21 +29,76 @@ private val MOCK_RESULTADOS = listOf(
     ResultadoEscaneo(false)
 )
 
-@Singleton
-class ApiService @Inject constructor() {
+private const val PREFS_NAME   = "garbia_cache"
+private const val KEY_RESULTADO = "ultimo_resultado"
 
-    // URL del endpoint de clasificación — vacío mientras no haya backend desplegado
+@Singleton
+class ApiService @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
     private val endpointUrl: String = ""
 
     private val client = HttpClient(Android) {
         install(HttpTimeout) {
-            requestTimeoutMillis  = 10_000
-            connectTimeoutMillis  = 5_000
+            requestTimeoutMillis = 10_000
+            connectTimeoutMillis =  5_000
         }
     }
 
+    private val prefs get() = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    // ── Conectividad ──────────────────────────────────────────────────────────
+
+    private fun isConnected(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork ?: return false) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    // ── Cache ─────────────────────────────────────────────────────────────────
+
+    private fun guardarEnCache(resultado: ResultadoEscaneo) {
+        if (!resultado.identificado) return
+        val json = JSONObject().apply {
+            put("tipoMaterial", resultado.tipoMaterial)
+            put("contenedor",   resultado.contenedor)
+            put("descripcion",  resultado.descripcion)
+            put("puntos",       resultado.puntos)
+            put("co2",          resultado.co2Ahorrado.toDouble())
+        }.toString()
+        prefs.edit().putString(KEY_RESULTADO, json).apply()
+    }
+
+    private fun cargarDesdeCache(): ResultadoEscaneo? {
+        val json = prefs.getString(KEY_RESULTADO, null) ?: return null
+        return try {
+            val obj = JSONObject(json)
+            ResultadoEscaneo(
+                identificado = true,
+                tipoMaterial = obj.optString("tipoMaterial"),
+                contenedor   = obj.optString("contenedor"),
+                descripcion  = obj.optString("descripcion"),
+                puntos       = obj.optInt("puntos", 10),
+                co2Ahorrado  = obj.optDouble("co2", 0.3).toFloat(),
+                isFromCache  = true
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // ── API principal ─────────────────────────────────────────────────────────
+
     suspend fun clasificarImagen(photoUri: String): ResultadoEscaneo {
-        if (endpointUrl.isBlank()) return mockFallback(photoUri)
+        if (!isConnected()) {
+            return cargarDesdeCache() ?: mockFallback(photoUri)
+        }
+
+        if (endpointUrl.isBlank()) {
+            val resultado = mockFallback(photoUri)
+            guardarEnCache(resultado)
+            return resultado
+        }
 
         return try {
             val base64 = leerImagenBase64(photoUri)
@@ -56,11 +112,15 @@ class ApiService @Inject constructor() {
                 setBody(cuerpo)
             }.bodyAsText()
 
-            parsearRespuesta(respuesta) ?: mockFallback(photoUri)
+            val resultado = parsearRespuesta(respuesta) ?: mockFallback(photoUri)
+            guardarEnCache(resultado)
+            resultado
         } catch (e: Exception) {
-            mockFallback(photoUri)
+            cargarDesdeCache() ?: mockFallback(photoUri)
         }
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun leerImagenBase64(uri: String): String {
         return try {
@@ -74,8 +134,7 @@ class ApiService @Inject constructor() {
     private fun parsearRespuesta(json: String): ResultadoEscaneo? {
         return try {
             val obj = JSONObject(json)
-            val identificado = obj.optBoolean("identificado", false)
-            if (!identificado) return ResultadoEscaneo(false)
+            if (!obj.optBoolean("identificado", false)) return ResultadoEscaneo(false)
             ResultadoEscaneo(
                 identificado = true,
                 tipoMaterial = obj.optString("material", ""),

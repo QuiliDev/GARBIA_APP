@@ -35,10 +35,11 @@ class ProcessingViewModel @Inject constructor(
             val resultado = apiService.clasificarImagen(photoUri)
             resultHolder.resultado = resultado
 
-            _statusText.value = if (resultado.identificado)
-                "✓ ${resultado.tipoMaterial} identificado"
-            else
-                "No se pudo identificar el material"
+            _statusText.value = when {
+                resultado.isFromCache  -> "📦 Sin conexión — resultado del caché local"
+                resultado.identificado -> "✓ ${resultado.tipoMaterial} identificado"
+                else                   -> "No se pudo identificar el material"
+            }
 
             delay(400)
             _analisisDone.value = true

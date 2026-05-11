@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,17 +50,18 @@ fun ResultScreen(
     photoUri: String,
     viewModel: ResultViewModel = hiltViewModel()
 ) {
-    val resultado    = remember { viewModel.getResultado() }
-    val displayData  = remember(resultado) { resultado.toDisplayData() }
+    val resultado   = remember { viewModel.getResultado() }
+    val displayData = remember(resultado) { resultado.toDisplayData() }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (displayData == null) {
             NoIdentifiedResultView(navController)
         } else {
             SuccessfulResultView(
-                navController = navController,
-                data          = displayData,
-                onContinuar   = {
+                navController  = navController,
+                data           = displayData,
+                isFromCache    = resultado.isFromCache,
+                onContinuar    = {
                     viewModel.confirmarEscaneo(resultado)
                     navController.navigate("home_screen") {
                         popUpTo("home_screen") { inclusive = true }
@@ -86,6 +88,7 @@ private fun ResultadoEscaneo.toDisplayData(): RecycleResultData? {
 fun SuccessfulResultView(
     navController: NavController,
     data: RecycleResultData,
+    isFromCache: Boolean = false,
     onContinuar: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -129,6 +132,32 @@ fun SuccessfulResultView(
             }
 
             Spacer(modifier = Modifier.weight(1f))
+
+            if (isFromCache) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color    = Color(0xFFFFF3E0)
+                ) {
+                    Row(
+                        modifier            = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                        verticalAlignment   = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Outlined.WifiOff,
+                            contentDescription = null,
+                            tint     = Color(0xFFE65100),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Sin conexión — resultado del último escaneo similar",
+                            fontSize = 12.sp,
+                            color    = Color(0xFFE65100)
+                        )
+                    }
+                }
+            }
 
             Card(
                 modifier = Modifier.fillMaxWidth(),

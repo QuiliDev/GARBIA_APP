@@ -89,4 +89,8 @@
     <!-- Errores generales -->
     <string name="error_generic">Algo salió mal. Inténtalo de nuevo.</string>
     <string name="error_no_connection">Sin conexión a internet.</string>
+
+    <!-- Modo offline / caché -->
+    <string name="cache_banner">Sin conexión — resultado del último escaneo similar</string>
+    <string name="cache_status">Sin conexión — resultado del caché local</string>
 </resources>

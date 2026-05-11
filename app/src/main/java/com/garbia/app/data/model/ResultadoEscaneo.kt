@@ -6,5 +6,6 @@ data class ResultadoEscaneo(
     val contenedor: String = "",
     val descripcion: String = "",
     val puntos: Int = 0,
-    val co2Ahorrado: Float = 0f
+    val co2Ahorrado: Float = 0f,
+    val isFromCache: Boolean = false
 )
