@@ -62,9 +62,10 @@ fun ResultScreen(
                 data           = displayData,
                 isFromCache    = resultado.isFromCache,
                 onContinuar    = {
-                    viewModel.confirmarEscaneo(resultado)
-                    navController.navigate("home_screen") {
-                        popUpTo("home_screen") { inclusive = true }
+                    viewModel.confirmarEscaneo(resultado) {
+                        navController.navigate("home_screen") {
+                            popUpTo("home_screen") { inclusive = true }
+                        }
                     }
                 }
             )

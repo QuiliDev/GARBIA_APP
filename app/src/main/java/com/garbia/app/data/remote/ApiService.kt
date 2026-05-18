@@ -22,10 +22,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private val MOCK_RESULTADOS = listOf(
-    ResultadoEscaneo(true,  "Vidrio",   "Contenedor Verde",    "Botellas, frascos y tarros. Recuerda quitar las tapas.",           15, 0.5f),
-    ResultadoEscaneo(true,  "Plástico", "Contenedor Amarillo", "Botellas de plástico, latas y bricks. Aplástalos si puedes.",      10, 0.3f),
-    ResultadoEscaneo(true,  "Papel",    "Contenedor Azul",     "Papel, cartón y revistas. Retira cualquier elemento de plástico.", 20, 0.4f),
-    ResultadoEscaneo(true,  "Orgánico", "Contenedor Marrón",   "Restos de comida y residuos orgánicos biodegradables.",            12, 0.2f),
+    ResultadoEscaneo(true,  "Vidrio",   "Contenedor Verde",    "Botellas, frascos y tarros. Recuerda quitar las tapas.",           250, 0.5f),
+    ResultadoEscaneo(true,  "Plástico", "Contenedor Amarillo", "Botellas de plástico, latas y bricks. Aplástalos si puedes.",      300, 0.3f),
+    ResultadoEscaneo(true,  "Papel",    "Contenedor Azul",     "Papel, cartón y revistas. Retira cualquier elemento de plástico.", 150, 0.4f),
+    ResultadoEscaneo(true,  "Orgánico", "Contenedor Marrón",   "Restos de comida y residuos orgánables biodegradables.",           100, 0.2f),
     ResultadoEscaneo(false)
 )
 
@@ -124,8 +124,14 @@ class ApiService @Inject constructor(
 
     private fun leerImagenBase64(uri: String): String {
         return try {
-            val archivo = File(Uri.parse(uri).path ?: return uri)
-            Base64.encodeToString(archivo.readBytes(), Base64.NO_WRAP)
+            val parsedUri = Uri.parse(uri)
+            val bytes = if (parsedUri.scheme == "file") {
+                File(parsedUri.path ?: error("null path")).readBytes()
+            } else {
+                context.contentResolver.openInputStream(parsedUri)?.use { it.readBytes() }
+                    ?: error("null stream")
+            }
+            Base64.encodeToString(bytes, Base64.NO_WRAP)
         } catch (e: Exception) {
             uri.takeLast(16)
         }
@@ -135,17 +141,31 @@ class ApiService @Inject constructor(
         return try {
             val obj = JSONObject(json)
             if (!obj.optBoolean("identificado", false)) return ResultadoEscaneo(false)
+            val material = obj.optString("material", "")
             ResultadoEscaneo(
                 identificado = true,
-                tipoMaterial = obj.optString("material", ""),
+                tipoMaterial = material,
                 contenedor   = obj.optString("contenedor", ""),
                 descripcion  = obj.optString("descripcion", ""),
-                puntos       = obj.optInt("puntos", 10),
+                puntos       = puntosSegunMaterial(material),
                 co2Ahorrado  = obj.optDouble("co2", 0.3).toFloat()
             )
         } catch (e: Exception) {
             null
         }
+    }
+
+    private fun puntosSegunMaterial(material: String): Int = when (material.lowercase().trim()) {
+        "pilas", "baterías", "batería", "bateria", "pila"                    -> 500
+        "aceite"                                                              -> 450
+        "electrónico", "electronico", "raee", "residuo electrónico"          -> 400
+        "metal", "lata", "aluminio"                                           -> 350
+        "plástico", "plastico", "envases"                                     -> 300
+        "vidrio"                                                              -> 250
+        "cartón", "carton"                                                    -> 200
+        "papel"                                                               -> 150
+        "orgánico", "organico"                                                -> 100
+        else                                                                  ->  50
     }
 
     private fun mockFallback(photoUri: String): ResultadoEscaneo =

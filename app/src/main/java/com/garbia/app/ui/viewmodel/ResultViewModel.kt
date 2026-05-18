@@ -20,8 +20,11 @@ class ResultViewModel @Inject constructor(
     fun getResultado(): ResultadoEscaneo =
         resultHolder.resultado ?: ResultadoEscaneo(identificado = false)
 
-    fun confirmarEscaneo(resultado: ResultadoEscaneo) {
-        if (!resultado.identificado || escaneoGuardado) return
+    fun confirmarEscaneo(resultado: ResultadoEscaneo, onGuardado: () -> Unit) {
+        if (!resultado.identificado || escaneoGuardado) {
+            onGuardado()
+            return
+        }
         escaneoGuardado = true
         viewModelScope.launch {
             usuarioRepository.registrarEscaneo(
@@ -31,6 +34,7 @@ class ResultViewModel @Inject constructor(
                 co2          = resultado.co2Ahorrado
             )
             resultHolder.resultado = null
+            onGuardado()
         }
     }
 }

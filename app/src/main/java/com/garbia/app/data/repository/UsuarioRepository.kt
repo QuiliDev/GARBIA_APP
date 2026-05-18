@@ -80,8 +80,8 @@ private fun UsuarioEntity.toDomain(): Usuario {
         co2Ahorrado = co2Ahorrado,
         nivel = nivel,
         nivelLabel = calcularLabelNivel(nivel),
-        puntosEnNivel = puntosTotales % 500,
-        puntosParaSiguienteNivel = 500
+        puntosEnNivel = puntosTotales % 300,
+        puntosParaSiguienteNivel = 300
     )
 }
 
@@ -94,7 +94,7 @@ private fun EscaneoEntity.toDomain() = Escaneo(
     fechaTimestamp = fechaTimestamp
 )
 
-private fun calcularNivel(puntos: Int): Int = (puntos / 500) + 1
+private fun calcularNivel(puntos: Int): Int = (puntos / 300) + 1
 
 private fun calcularLabelNivel(nivel: Int): String = when (nivel) {
     1 -> "Nivel 1: Principiante"
